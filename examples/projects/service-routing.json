@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "project": "service-routing",
+  "group": "io.jdda.routing",
+  "ingress": "gateway",
+  "modules": [
+    {
+      "name": "facade-service",
+      "features": ["openfeign"],
+      "routes": ["/api/summary"],
+      "policy": {"maxInFlight": 32}
+    },
+    {
+      "name": "catalog-service",
+      "routes": ["/api/catalog"],
+      "policy": {"parameters": {"catalogName": "fixture-catalog"}}
+    }
+  ],
+  "tasks": [
+    {
+      "id": "CATALOG",
+      "module": "catalog-service",
+      "package": "controller",
+      "files": ["CatalogController.java"],
+      "goal": "Expose one public HTTP read for the routing acceptance fixture.",
+      "constraints": "Use public @RestController CatalogController and @GetMapping(\"/api/catalog\"). Inject io.jdda.routing.catalog.runtime.RuntimePolicy using the constructor. Return Map<String,String> with name from policy.current().settings().parameters().getOrDefault(\"catalogName\", \"fixture-catalog\"). Read current() on each request. No authentication for reads and no external dependencies."
+    },
+    {
+      "id": "SUMMARY",
+      "module": "facade-service",
+      "package": "controller",
+      "files": ["SummaryController.java", "CatalogApi.java"],
+      "goal": "Expose a summary route backed by an actual OpenFeign call to the independent catalog service.",
+      "constraints": "Use two public Java types in separate requested files. CatalogApi must be a public interface annotated @FeignClient(name=\"catalog\", url=\"${CATALOG_URL:http://catalog-service:8080}\"). It has @GetMapping(\"/api/catalog\") Map<String,String> catalog(). SummaryController is a public @RestController with constructor injection of CatalogApi. GET /api/summary calls the interface on every request and returns JSON {\"origin\": the upstream name value}. Catch feign.FeignException and return HTTP 503 JSON {\"code\":\"CATALOG_UNAVAILABLE\"}. No fallback or static catalog response. OpenFeign is enabled in the baseline."
+    }
+  ]
+}

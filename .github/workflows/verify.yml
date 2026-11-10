@@ -1,11 +1,23 @@
-name: Verify Java candidate
+name: Verify JDDA
 on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
   verify:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18-alpine@sha256:123b17998ccaf47e53b502e8c6a1e79afd8f579c6f3eec83c563da026f957395
+        env:
+          POSTGRES_USER: jdda_ci
+          POSTGRES_DB: jdda_test
+          POSTGRES_PASSWORD: jdda_ci_local_test
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd "pg_isready -U jdda_ci -d jdda_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -15,4 +27,24 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - run: mvn -B -ntp verify
+      - name: Java and PostgreSQL integration tests
+        env:
+          SPRING_DATASOURCE_USERNAME: jdda_ci
+          JDDA_DB_PASSWORD: jdda_ci_local_test
+          JDDA_TEST_DB_URL: jdbc:postgresql://127.0.0.1:${{ job.services.postgres.ports[5432] }}/jdda_test
+        run: mvn -B -ntp verify
+      - name: Contracts and project generation
+        run: |
+          python3 -m venv "$RUNNER_TEMP/jdda-contracts"
+          "$RUNNER_TEMP/jdda-contracts/bin/pip" install -r contracts/requirements.txt
+          "$RUNNER_TEMP/jdda-contracts/bin/python" -B -m unittest discover -s contracts -p 'test_*.py' -v
+      - name: Build the generated Java presets
+        run: |
+          work="$RUNNER_TEMP/jdda-presets"
+          python3 -B scripts/Generate-Project.py --manifest examples/projects/reservations.json --output "$work/full"
+          python3 -B scripts/Generate-Project.py --manifest examples/projects/reservations.json --output "$work/minimal" --minimal
+          python3 -B scripts/Generate-Project.py --manifest examples/projects/service-routing.json --output "$work/gateway"
+          docker build --platform linux/amd64 --build-arg MODULE=allocation-service "$work/full"
+          docker build --platform linux/amd64 --build-arg MODULE=allocation-service "$work/minimal"
+          docker build --platform linux/amd64 --build-arg MODULE=edge-gateway "$work/gateway"
+          docker build --platform linux/amd64 --build-arg MODULE=facade-service "$work/gateway"

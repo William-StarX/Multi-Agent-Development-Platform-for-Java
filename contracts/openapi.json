@@ -1,0 +1,3964 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "JDDA control plane contract draft",
+    "version": "0.1.0",
+    "description": "控制面契约。x-implemented=true 标识已实现接口。本机服务支持管理员及项目绑定的 Worker、Bugfix Bearer 凭据。"
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/governance": {
+      "get": {
+        "operationId": "getGovernance",
+        "summary": "查看控制实例当前生效的运行治理规则",
+        "description": "仅管理员。显示来源、实例内递增的修订号、生效时间和当前规则。",
+        "responses": {
+          "200": {
+            "description": "当前生效规则",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["source", "revision", "appliedAt", "settings"],
+                  "properties": {
+                    "source": {"type": "string", "enum": ["default", "nacos"]},
+                    "revision": {"type": "integer", "minimum": 0},
+                    "appliedAt": {"type": ["string", "null"], "format": "date-time"},
+                    "settings": {
+                      "type": "object",
+                      "properties": {
+                        "maxActiveAttempts": {"type": "integer", "minimum": 0, "maximum": 10000},
+                        "projectLimits": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0, "maximum": 10000}}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {"$ref": "#/components/responses/Error401"},
+          "403": {"$ref": "#/components/responses/Error403"}
+        },
+        "x-implemented": true
+      }
+    },
+    "/projects/{p}/library/integration-candidates/{sha}/release": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "sha",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getIntegrationRelease",
+        "summary": "查询候选审批和整合状态",
+        "x-implemented": true,
+        "responses": {
+          "200": {
+            "description": "查询候选审批和整合状态",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        }
+      }
+    },
+    "/projects/{p}/library/integration-candidates/{sha}/release/approve": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "sha",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "approveIntegrationRelease",
+        "summary": "为当前基线及成功 CI 创建限时审批",
+        "x-implemented": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "runId"
+                ],
+                "properties": {
+                  "runId": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "为当前基线及成功 CI 创建限时审批",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        }
+      }
+    },
+    "/projects/{p}/library/integration-candidates/{sha}/release/begin": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "sha",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "beginIntegrationRelease",
+        "summary": "复验基线与 CI 并登记推送意图",
+        "x-implemented": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "approvalId"
+                ],
+                "properties": {
+                  "approvalId": {
+                    "$ref": "execution.schema.json#/$defs/Identifier"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "复验基线与 CI 并登记推送意图",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        }
+      }
+    },
+    "/projects/{p}/library/integration-candidates/{sha}/release/confirm": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "sha",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "confirmIntegrationRelease",
+        "summary": "核对远端精确提交并登记完成",
+        "x-implemented": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "approvalId"
+                ],
+                "properties": {
+                  "approvalId": {
+                    "$ref": "execution.schema.json#/$defs/Identifier"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "核对远端精确提交并登记完成",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        }
+      }
+    },
+    "/projects/{p}/library/tasks/{t}/revisions/{r}/accepted-result": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "t",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "r",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getAcceptedIntegrationResult",
+        "summary": "读取已验收的 Worker Git 结果",
+        "x-implemented": true,
+        "responses": {
+          "200": {
+            "description": "读取已验收的 Worker Git 结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "taskId",
+                    "revision",
+                    "resultCommit",
+                    "resultDigest",
+                    "repoId",
+                    "baseCommit",
+                    "ownedPaths"
+                  ],
+                  "properties": {
+                    "taskId": {
+                      "$ref": "execution.schema.json#/$defs/Identifier"
+                    },
+                    "revision": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "resultCommit": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{40}$"
+                    },
+                    "resultDigest": {
+                      "type": "string",
+                      "pattern": "^sha256:[0-9a-f]{64}$"
+                    },
+                    "repoId": {
+                      "$ref": "execution.schema.json#/$defs/Identifier"
+                    },
+                    "baseCommit": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{40}$"
+                    },
+                    "ownedPaths": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          }
+        }
+      }
+    },
+    "/projects/{p}/library/integration-candidates": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "registerIntegrationCandidate",
+        "summary": "登记目标基线、候选提交及有序来源",
+        "x-implemented": true,
+        "responses": {
+          "201": {
+            "description": "登记目标基线、候选提交及有序来源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "repoId",
+                    "targetRef",
+                    "baseSha",
+                    "candidateSha",
+                    "sources",
+                    "projectId",
+                    "createdAt"
+                  ],
+                  "properties": {
+                    "repoId": {
+                      "$ref": "execution.schema.json#/$defs/Identifier"
+                    },
+                    "targetRef": {
+                      "type": "string",
+                      "pattern": "^refs/heads/[A-Za-z0-9][A-Za-z0-9._/-]{0,120}$"
+                    },
+                    "baseSha": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{40}$"
+                    },
+                    "candidateSha": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{40}$"
+                    },
+                    "sources": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 32,
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "taskId",
+                          "revision",
+                          "resultCommit",
+                          "resultDigest"
+                        ],
+                        "properties": {
+                          "taskId": {
+                            "$ref": "execution.schema.json#/$defs/Identifier"
+                          },
+                          "revision": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 9007199254740991
+                          },
+                          "resultCommit": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{40}$"
+                          },
+                          "resultDigest": {
+                            "type": "string",
+                            "pattern": "^sha256:[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    },
+                    "projectId": {
+                      "$ref": "execution.schema.json#/$defs/Identifier"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "repoId",
+                  "targetRef",
+                  "baseSha",
+                  "candidateSha",
+                  "sources"
+                ],
+                "properties": {
+                  "repoId": {
+                    "$ref": "execution.schema.json#/$defs/Identifier"
+                  },
+                  "targetRef": {
+                    "type": "string",
+                    "pattern": "^refs/heads/[A-Za-z0-9][A-Za-z0-9._/-]{0,120}$"
+                  },
+                  "baseSha": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{40}$"
+                  },
+                  "candidateSha": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{40}$"
+                  },
+                  "sources": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 32,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "taskId",
+                        "revision",
+                        "resultCommit",
+                        "resultDigest"
+                      ],
+                      "properties": {
+                        "taskId": {
+                          "$ref": "execution.schema.json#/$defs/Identifier"
+                        },
+                        "revision": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "resultCommit": {
+                          "type": "string",
+                          "pattern": "^[0-9a-f]{40}$"
+                        },
+                        "resultDigest": {
+                          "type": "string",
+                          "pattern": "^sha256:[0-9a-f]{64}$"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{p}/library/integration-candidates/{sha}": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "sha",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getIntegrationCandidate",
+        "summary": "读取候选和同仓库同 SHA 的 CI 证据",
+        "x-implemented": true,
+        "responses": {
+          "200": {
+            "description": "读取候选和同仓库同 SHA 的 CI 证据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "repoId",
+                    "targetRef",
+                    "baseSha",
+                    "candidateSha",
+                    "sources",
+                    "projectId",
+                    "createdAt",
+                    "ciEvidence"
+                  ],
+                  "properties": {
+                    "repoId": {
+                      "$ref": "execution.schema.json#/$defs/Identifier"
+                    },
+                    "targetRef": {
+                      "type": "string",
+                      "pattern": "^refs/heads/[A-Za-z0-9][A-Za-z0-9._/-]{0,120}$"
+                    },
+                    "baseSha": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{40}$"
+                    },
+                    "candidateSha": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{40}$"
+                    },
+                    "sources": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 32,
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "taskId",
+                          "revision",
+                          "resultCommit",
+                          "resultDigest"
+                        ],
+                        "properties": {
+                          "taskId": {
+                            "$ref": "execution.schema.json#/$defs/Identifier"
+                          },
+                          "revision": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 9007199254740991
+                          },
+                          "resultCommit": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{40}$"
+                          },
+                          "resultDigest": {
+                            "type": "string",
+                            "pattern": "^sha256:[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    },
+                    "projectId": {
+                      "$ref": "execution.schema.json#/$defs/Identifier"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "ciEvidence": {
+                      "type": [
+                        "object",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          }
+        }
+      }
+    },
+    "/projects/{p}/tasks": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "createTask",
+        "summary": "创建任务草案",
+        "description": "当前由本机管理员调用。事务与权限实现范围见 README。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "创建任务草案",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskSnapshot"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "当前 rowVersion 的带双引号表示。",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskPackage"
+              }
+            }
+          }
+        },
+        "x-implemented": true
+      }
+    },
+    "/projects/{p}/tasks/{t}/revisions/{r}": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "t",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "r",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getTask",
+        "summary": "查询任务及状态",
+        "description": "当前由本机管理员调用。事务与权限实现范围见 README。",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "查询任务及状态",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskView"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "当前 rowVersion 的带双引号表示。",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "x-implemented": true
+      }
+    },
+    "/projects/{p}/tasks/{t}/revisions/{r}/publish": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "t",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "r",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      ],
+      "post": {
+        "operationId": "publishTask",
+        "summary": "发布任务",
+        "description": "本地运行时已实现。Worker 端点使用项目绑定的 Worker Bearer 凭据；发布/取消使用管理员凭据。结果先进入 VERIFYING，由可信验证者确认摘要。过期尝试阻塞并保留占位，需停止证据释放。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "发布任务",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskSnapshot"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "当前 rowVersion 的带双引号表示。",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Empty"
+              }
+            }
+          }
+        },
+        "x-implemented": true
+      }
+    },
+    "/projects/{p}/dispatch": {
+      "parameters": [
+        {"name": "p", "in": "path", "required": true, "schema": {"$ref": "execution.schema.json#/$defs/Identifier"}}
+      ],
+      "get": {
+        "operationId": "getProjectDispatch",
+        "summary": "读取项目派发开关及其版本",
+        "x-implemented": true,
+        "responses": {
+          "200": {"$ref": "#/components/responses/DispatchState"},
+          "401": {"$ref": "#/components/responses/Error401"},
+          "403": {"$ref": "#/components/responses/Error403"},
+          "404": {"$ref": "#/components/responses/Error404"}
+        }
+      },
+      "put": {
+        "operationId": "setProjectDispatch",
+        "summary": "暂停或恢复项目的新任务领取",
+        "description": "已领取的尝试可继续续约、提交结果或确认停止。普通 Worker 与 Bugfix 的新领取均受开关约束。",
+        "x-implemented": true,
+        "parameters": [{"$ref": "#/components/parameters/IdempotencyKey"}, {"$ref": "#/components/parameters/IfMatch"}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {
+          "type": "object", "additionalProperties": false, "required": ["paused"],
+          "properties": {"paused": {"type": "boolean"}}
+        }}}},
+        "responses": {
+          "200": {"$ref": "#/components/responses/DispatchState"},
+          "400": {"$ref": "#/components/responses/Error400"},
+          "401": {"$ref": "#/components/responses/Error401"},
+          "403": {"$ref": "#/components/responses/Error403"},
+          "404": {"$ref": "#/components/responses/Error404"},
+          "409": {"$ref": "#/components/responses/Error409"},
+          "428": {"$ref": "#/components/responses/Error428"}
+        }
+      }
+    },
+    "/projects/{p}/task-batches": {
+      "parameters": [
+        {"name": "p", "in": "path", "required": true, "schema": {"$ref": "execution.schema.json#/$defs/Identifier"}}
+      ],
+      "post": {
+        "operationId": "publishTaskBatch",
+        "summary": "按依赖顺序原子创建并发布一批任务",
+        "description": "管理员提交同一计划版本下的 1 至 16 个完整任务包。服务检查现有修订和批内依赖，拒绝环及无效任务。重复幂等请求返回原始发布回执。",
+        "x-implemented": true,
+        "parameters": [{"$ref": "#/components/parameters/IdempotencyKey"}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {
+          "type": "object", "required": ["tasks"], "additionalProperties": false,
+          "properties": {"tasks": {"type": "array", "minItems": 1, "maxItems": 16,
+            "items": {"$ref": "#/components/schemas/TaskPackage"}}}
+        }}}},
+        "responses": {
+          "201": {"description": "按发布顺序返回任务快照", "content": {"application/json": {"schema": {
+            "type": "object", "required": ["tasks"], "additionalProperties": false,
+            "properties": {"tasks": {"type": "array", "items": {"$ref": "#/components/schemas/TaskSnapshot"}}}
+          }}}},
+          "400": {"$ref": "#/components/responses/Error400"},
+          "401": {"$ref": "#/components/responses/Error401"},
+          "403": {"$ref": "#/components/responses/Error403"},
+          "404": {"$ref": "#/components/responses/Error404"},
+          "409": {"$ref": "#/components/responses/Error409"},
+          "422": {"$ref": "#/components/responses/Error422"}
+        }
+      }
+    },
+    "/projects/{p}/bugfix/claims": {
+      "parameters": [
+        {"name": "p", "in": "path", "required": true, "schema": {"$ref": "execution.schema.json#/$defs/Identifier"}}
+      ],
+      "post": {
+        "operationId": "claimBugfixTask",
+        "summary": "专职 Bugfix 领取已授权的修复尝试",
+        "description": "使用同项目的 Bugfix 凭据。返回原任务包、独立租约和固定的失败证据。",
+        "x-implemented": true,
+        "parameters": [{"$ref": "#/components/parameters/IdempotencyKey"}],
+        "responses": {
+          "200": {"description": "已领取", "content": {"application/json": {"schema": {"allOf": [
+            {"$ref": "#/components/schemas/Claim"}, {"required": ["repair"]}
+          ]}}}},
+          "204": {"description": "当前没有可领取修复任务，下一轮使用新幂等键。"},
+          "400": {"$ref": "#/components/responses/Error400"},
+          "401": {"$ref": "#/components/responses/Error401"},
+          "403": {"$ref": "#/components/responses/Error403"},
+          "404": {"$ref": "#/components/responses/Error404"},
+          "409": {"$ref": "#/components/responses/Error409"}
+        }
+      }
+    },
+    "/projects/{p}/library/tasks/{t}/revisions/{r}/failure-evidence": {
+      "parameters": [
+        {"name": "p", "in": "path", "required": true, "schema": {"$ref": "execution.schema.json#/$defs/Identifier"}},
+        {"name": "t", "in": "path", "required": true, "schema": {"$ref": "execution.schema.json#/$defs/Identifier"}},
+        {"name": "r", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}
+      ],
+      "get": {
+        "operationId": "getLibraryFailureEvidence",
+        "summary": "管理员读取当前失败证据或已固定的交接证据",
+        "x-implemented": true,
+        "responses": {
+          "200": {"description": "失败证据引用", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FailureEvidence"}}}},
+          "401": {"$ref": "#/components/responses/Error401"},
+          "403": {"$ref": "#/components/responses/Error403"},
+          "404": {"$ref": "#/components/responses/Error404"}
+        }
+      }
+    },
+    "/projects/{p}/worker/claims": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "claimTask",
+        "summary": "领取任务租约",
+        "description": "Worker 使用项目绑定凭据领取任务。taskId 与 revision 一起提供时只尝试领取指定任务修订，仍检查能力、归属、依赖、主机槽与路径。过期尝试需停止证据释放。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {"name": "taskId", "in": "query", "schema": {"$ref": "execution.schema.json#/$defs/Identifier"}},
+          {"name": "revision", "in": "query", "schema": {"$ref": "execution.schema.json#/$defs/PositiveInteger"}}
+        ],
+        "responses": {
+          "200": {
+            "description": "领取任务租约",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Claim"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "当前没有可领取任务。同一幂等键仍返回原 204，下一轮领取使用新键。"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Empty"
+              }
+            }
+          }
+        },
+        "x-implemented": true
+      }
+    },
+    "/projects/{p}/attempts/{a}/started": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "a",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "startAttempt",
+        "summary": "确认执行启动",
+        "description": "本地运行时已实现。Worker 端点使用项目绑定的 Worker Bearer 凭据；发布/取消使用管理员凭据。结果先进入 VERIFYING，由可信验证者确认摘要。过期尝试阻塞并保留占位，需停止证据释放。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "确认执行启动",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskSnapshot"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "当前 rowVersion 的带双引号表示。",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptToken"
+              }
+            }
+          }
+        },
+        "x-implemented": true
+      }
+    },
+    "/projects/{p}/attempts/{a}/heartbeat": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "a",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "heartbeat",
+        "summary": "续租与心跳",
+        "description": "本地运行时已实现。Worker 端点使用项目绑定的 Worker Bearer 凭据；发布/取消使用管理员凭据。结果先进入 VERIFYING，由可信验证者确认摘要。过期尝试阻塞并保留占位，需停止证据释放。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "续租与心跳",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskLease"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptToken"
+              }
+            }
+          }
+        },
+        "x-implemented": true
+      }
+    },
+    "/projects/{p}/attempts/{a}/instructions": {
+      "get": {
+        "operationId": "readAttemptInstructions",
+        "summary": "读取当前尝试的用户指令",
+        "description": "启用用户介入的仓库任务支持此操作。请求者必须持有该尝试的项目绑定执行凭据和有效租约。",
+        "parameters": [
+          {"name": "p", "in": "path", "required": true, "schema": {"$ref": "execution.schema.json#/$defs/Identifier"}},
+          {"name": "a", "in": "path", "required": true, "schema": {"$ref": "execution.schema.json#/$defs/Identifier"}},
+          {"name": "epoch", "in": "query", "required": true, "schema": {"type": "integer", "minimum": 1}}
+        ],
+        "responses": {
+          "200": {
+            "description": "当前指令版本及按版本排列的历史",
+            "content": {"application/json": {"schema": {
+              "type": "object",
+              "required": ["version", "items"],
+              "properties": {
+                "version": {"type": "integer", "minimum": 0},
+                "items": {"type": "array", "maxItems": 8, "items": {
+                  "type": "object",
+                  "required": ["version", "text", "actor", "createdAt"],
+                  "properties": {
+                    "version": {"type": "integer", "minimum": 1},
+                    "text": {"type": "string", "maxLength": 1200},
+                    "actor": {"type": "string"},
+                    "createdAt": {"type": "string", "format": "date-time"}
+                  }
+                }}
+              }
+            }}}
+          },
+          "400": {"$ref": "#/components/responses/Error400"},
+          "401": {"$ref": "#/components/responses/Error401"},
+          "403": {"$ref": "#/components/responses/Error403"},
+          "409": {"$ref": "#/components/responses/Error409"}
+        },
+        "x-implemented": true
+      }
+    },
+    "/projects/{p}/attempts/{a}/results": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "a",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "submitResult",
+        "summary": "提交结果以供验收",
+        "description": "本地运行时已实现。Worker 端点使用项目绑定的 Worker Bearer 凭据；发布/取消使用管理员凭据。结果先进入 VERIFYING，由可信验证者确认摘要。过期尝试阻塞并保留占位，需停止证据释放。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "name": "X-JDDA-Instruction-Version",
+            "in": "header",
+            "description": "启用用户介入的任务必须提交本次执行采用的指令版本。尚无指令时传 0。",
+            "schema": {"type": "integer", "minimum": 0}
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "提交结果以供验收",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultSubmission"
+              }
+            }
+          }
+        },
+        "x-implemented": true
+      }
+    },
+    "/projects/{p}/tasks/{t}/revisions/{r}/cancel": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "t",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "r",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      ],
+      "post": {
+        "operationId": "cancelTask",
+        "summary": "提交取消意图",
+        "description": "本地运行时已实现。Worker 端点使用项目绑定的 Worker Bearer 凭据；发布/取消使用管理员凭据。结果先进入 VERIFYING，由可信验证者确认摘要。过期尝试阻塞并保留占位，需停止证据释放。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "提交取消意图",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskSnapshot"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "当前 rowVersion 的带双引号表示。",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reason"
+              }
+            }
+          }
+        },
+        "x-implemented": true
+      }
+    },
+    "/projects/{p}/attempts/{a}/stopped": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "a",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "reportStopped",
+        "summary": "上报可信停止证据",
+        "description": "本地运行时已实现。Worker 端点使用项目绑定的 Worker Bearer 凭据；发布/取消使用管理员凭据。结果先进入 VERIFYING，由可信验证者确认摘要。过期尝试阻塞并保留占位，需停止证据释放。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "上报可信停止证据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskSnapshot"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "当前 rowVersion 的带双引号表示。",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StopReport"
+              }
+            }
+          }
+        },
+        "x-implemented": true
+      }
+    },
+    "/projects/{p}/agents": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "registerAgent",
+        "summary": "登记组织节点",
+        "description": "当前由本机管理员调用。事务与权限实现范围见 README。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "登记组织节点",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentNode"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "当前 rowVersion 的带双引号表示。",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentRegistration"
+              }
+            }
+          }
+        },
+        "x-implemented": true
+      }
+    },
+    "/projects/{p}/agents/{agent}": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "agent",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getAgent",
+        "summary": "查询组织节点",
+        "description": "当前由本机管理员调用。事务与权限实现范围见 README。",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "查询组织节点",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentNode"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "当前 rowVersion 的带双引号表示。",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "x-implemented": true
+      }
+    },
+    "/projects/{p}/agents/{agent}/parent": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "agent",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "put": {
+        "operationId": "changeParent",
+        "summary": "修改节点父关系",
+        "description": "当前由本机管理员调用。事务与权限实现范围见 README。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "修改节点父关系",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentNode"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "当前 rowVersion 的带双引号表示。",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParentChange"
+              }
+            }
+          }
+        },
+        "x-implemented": true
+      }
+    },
+    "/projects/{p}/agents/{agent}/status": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "agent",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "put": {
+        "operationId": "changeAgentStatus",
+        "summary": "排空、停用或恢复节点",
+        "description": "项目范围授权和事务规则见 contracts 文档。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "排空、停用或恢复节点",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentNode"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "当前 rowVersion 的带双引号表示。",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentStatusChange"
+              }
+            }
+          }
+        },
+        "x-implemented": false
+      }
+    },
+    "/projects/{p}/approvals": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "requestApproval",
+        "summary": "请求精确对象审批",
+        "description": "项目范围授权和事务规则见 contracts 文档。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "请求精确对象审批",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Approval"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "当前 rowVersion 的带双引号表示。",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalRequest"
+              }
+            }
+          }
+        },
+        "x-implemented": false
+      }
+    },
+    "/projects/{p}/approvals/{approval}": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "approval",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getApproval",
+        "summary": "查询审批状态",
+        "description": "项目范围授权和事务规则见 contracts 文档。",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "查询审批状态",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Approval"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "当前 rowVersion 的带双引号表示。",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "x-implemented": false
+      }
+    },
+    "/projects/{p}/approvals/{approval}/decisions": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "approval",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "decideApproval",
+        "summary": "审批对象",
+        "description": "项目范围授权和事务规则见 contracts 文档。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "审批对象",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Approval"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "当前 rowVersion 的带双引号表示。",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalDecision"
+              }
+            }
+          }
+        },
+        "x-implemented": false
+      }
+    },
+    "/projects/{p}/incidents": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "reportIncident",
+        "summary": "登记执行故障",
+        "description": "项目范围授权和事务规则见 contracts 文档。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "登记执行故障",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Incident"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "当前 rowVersion 的带双引号表示。",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentReport"
+              }
+            }
+          }
+        },
+        "x-implemented": false
+      }
+    },
+    "/projects/{p}/incidents/{incident}": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "incident",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getIncident",
+        "summary": "查询故障升级记录",
+        "description": "项目范围授权和事务规则见 contracts 文档。",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "查询故障升级记录",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Incident"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "当前 rowVersion 的带双引号表示。",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "x-implemented": false
+      }
+    },
+    "/projects/{p}/incidents/{incident}/acknowledge": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "incident",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "ackIncident",
+        "summary": "确认接手故障",
+        "description": "项目范围授权和事务规则见 contracts 文档。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "确认接手故障",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Incident"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "当前 rowVersion 的带双引号表示。",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^\"[1-9][0-9]*\"$"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Empty"
+              }
+            }
+          }
+        },
+        "x-implemented": false
+      }
+    },
+    "/projects/{p}/incidents/{incident}/decisions": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "incident",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "decideIncident",
+        "summary": "提交故障处置决定",
+        "description": "项目范围授权和事务规则见 contracts 文档。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "提交故障处置决定",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentDecision"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentDecisionRequest"
+              }
+            }
+          }
+        },
+        "x-implemented": false
+      }
+    },
+    "/projects/{p}/events": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "streamEvents",
+        "summary": "订阅项目进度事件",
+        "description": "SSE 帧 id 为 eventId，event 为 eventType，data 是单行 JSON EventEnvelope。服务端定期检查项目授权，权限撤销后关闭流。初次订阅从当前游标之后开始，客户端先建立订阅再读取资源快照并按 aggregateVersion 去重。",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LastEventId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SSE 事件流，注释行用于保活。",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "id: event-1\nevent: TASK_STATE_CHANGED\ndata: {\"schemaVersion\":\"1\",\"projectId\":\"demo-java\",\"eventId\":\"event-1\",\"eventType\":\"TASK_STATE_CHANGED\",\"aggregateId\":\"ORDER-017\",\"aggregateVersion\":4,\"revision\":1,\"occurredAt\":\"2026-11-09T10:00:00Z\",\"traceId\":\"trace-1\",\"causationId\":null,\"payload\":{\"schemaVersion\":\"1\",\"projectId\":\"demo-java\",\"taskId\":\"ORDER-017\",\"revision\":1,\"state\":\"RUNNING\",\"rowVersion\":4,\"leaseEpoch\":1,\"currentAttemptId\":\"attempt-1\",\"updatedAt\":\"2026-11-09T09:00:10Z\"}}\n\n"
+              }
+            },
+            "x-event-schema": {
+              "$ref": "#/components/schemas/EventEnvelope"
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "410": {
+            "$ref": "#/components/responses/Error410"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error428"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "x-implemented": false
+      }
+    },
+    "/projects": {
+      "post": {
+        "operationId": "createProject",
+        "summary": "创建项目及 Root、Library、Bugfix 节点",
+        "x-implemented": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "创建项目及 Root、Library、Bugfix 节点",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectView"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{p}": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getProject",
+        "summary": "查询一致版本的组织结构",
+        "x-implemented": true,
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "查询一致版本的组织结构",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectView"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          }
+        }
+      }
+    },
+    "/projects/{p}/library/tasks": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "searchLibraryTasks",
+        "summary": "按需查询任务摘要及详情引用",
+        "x-implemented": true,
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "default": ""
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "maxBytes",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 2048,
+              "maximum": 65536,
+              "default": 8192
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "按需查询任务摘要及详情引用",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          }
+        },
+        "description": "按 taskId 字面子串查询；after 使用前一页 nextCursor。maxBytes 限制未压缩 UTF-8 JSON 正文。"
+      }
+    },
+    "/projects/{p}/agents/{agent}/credentials": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "agent",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "issueWorkerCredential",
+        "summary": "轮换 Worker 或 Bugfix 凭据，仅保存令牌哈希",
+        "description": "普通 Worker 只提供 token。专职 Bugfix 同时提供 hostId 与 capabilities。",
+        "x-implemented": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "description": "传入 * 时只在当前没有凭据的情况下创建。",
+            "schema": {"const": "*"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "签发 Worker 凭据，仅保存哈希",
+            "headers": {"ETag": {"description": "只创建模式返回的凭据标识，可用于条件撤销。", "schema": {"type": "string"}}}
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkerCredential"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{p}/agents/{agent}/credentials/revoke": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "agent",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "revokeWorkerCredential",
+        "summary": "立即撤销 Worker 或 Bugfix 凭据",
+        "x-implemented": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "传入签发时返回的凭据 ETag，仅撤销该版本。",
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "立即撤销 Worker 凭据"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          }
+        }
+      }
+    },
+    "/projects/{p}/tasks/{t}/revisions/{r}/verification": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "t",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "r",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        }
+      ],
+      "post": {
+        "operationId": "verifyTaskResult",
+        "summary": "可信验证者按结果摘要确认任务",
+        "description": "管理员可对当前 FAILED 结果提交 accepted=false、routeToBugfix=true，在原任务的剩余尝试次数内授权专职修复。每个任务修订只授权一次。",
+        "x-implemented": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "可信验证者按结果摘要确认任务",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskSnapshot"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Verification"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{p}/audit-events": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "readAuditEvents",
+        "summary": "按游标读取持久化任务事件",
+        "x-implemented": true,
+        "parameters": [
+          {
+            "name": "after",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "按游标读取持久化任务事件",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          }
+        }
+      }
+    },
+    "/projects/{p}/library/repositories/{repo}": {
+      "get": {
+        "operationId": "getLibraryRepository",
+        "summary": "读取仓库和验收工作流绑定",
+        "x-implemented": true,
+        "responses": {
+          "200": {
+            "description": "读取仓库和验收工作流绑定",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "repo",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "bindLibraryRepository",
+        "summary": "绑定不可变仓库及工作流信任配置",
+        "x-implemented": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "绑定不可变仓库及工作流信任配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RepositoryBinding"
+              }
+            }
+          }
+        },
+        "description": "管理员调用；CI_PASSED 是核验时的历史成功记录，不代表已审批或已合并。只支持公开 GitHub 仓库，核验包含源仓库、完整 SHA、工作流 ID/路径/文件摘要。"
+      }
+    },
+    "/projects/{p}/library/repositories/{repo}/candidates/{sha}/verify-ci": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "repo",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "sha",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "verifyCandidateCi",
+        "summary": "从 GitHub 核验候选提交 CI",
+        "x-implemented": true,
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "从 GitHub 核验候选提交 CI",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CiRunReference"
+              }
+            }
+          }
+        },
+        "description": "管理员调用；CI_PASSED 是核验时的历史成功记录，不代表已审批或已合并。只支持公开 GitHub 仓库，核验包含源仓库、完整 SHA、工作流 ID/路径/文件摘要。"
+      }
+    },
+    "/projects/{p}/library/repositories/{repo}/candidates/{sha}/ci": {
+      "parameters": [
+        {
+          "name": "p",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "repo",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        },
+        {
+          "name": "sha",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getCandidateCi",
+        "summary": "读取候选提交的历史 CI 核验记录",
+        "x-implemented": true,
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "读取候选提交的历史 CI 核验记录",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "description": "管理员调用；CI_PASSED 是核验时的历史成功记录，不代表已审批或已合并。只支持公开 GitHub 仓库，核验包含源仓库、完整 SHA、工作流 ID/路径/文件摘要。"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "已登记的人或 Worker 身份。每次请求验证主体、项目与操作权限，节点注册使用一次性注册凭据。"
+      }
+    },
+    "parameters": {
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9._-]+$"
+        },
+        "description": "按认证主体、项目、操作、资源和键保存回执。相同键不同内容返回 409。"
+      },
+      "IfMatch": {
+        "name": "If-Match",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "pattern": "^\"[1-9][0-9]*\"$"
+        },
+        "description": "带双引号的 rowVersion。过期返回 409，缺失返回 428。"
+      },
+      "LastEventId": {
+        "name": "Last-Event-ID",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "$ref": "execution.schema.json#/$defs/Identifier"
+        },
+        "description": "项目内已接收事件的 eventId，恢复从下一事件开始。"
+      }
+    },
+    "schemas": {
+      "TaskPackage": {
+        "$ref": "execution.schema.json#/$defs/TaskPackage"
+      },
+      "TaskSnapshot": {
+        "$ref": "execution.schema.json#/$defs/TaskSnapshot"
+      },
+      "TaskAttempt": {
+        "$ref": "execution.schema.json#/$defs/TaskAttempt"
+      },
+      "TaskLease": {
+        "$ref": "execution.schema.json#/$defs/TaskLease"
+      },
+      "ResultSubmission": {
+        "$ref": "execution.schema.json#/$defs/ResultSubmission"
+      },
+      "AgentNode": {
+        "$ref": "governance.schema.json#/$defs/AgentNode"
+      },
+      "AgentRegistration": {
+        "$ref": "governance.schema.json#/$defs/AgentRegistration"
+      },
+      "ParentChange": {
+        "$ref": "governance.schema.json#/$defs/ParentChange"
+      },
+      "Approval": {
+        "$ref": "governance.schema.json#/$defs/Approval"
+      },
+      "ApprovalRequest": {
+        "$ref": "governance.schema.json#/$defs/ApprovalRequest"
+      },
+      "ApprovalDecision": {
+        "$ref": "governance.schema.json#/$defs/ApprovalDecision"
+      },
+      "Incident": {
+        "$ref": "governance.schema.json#/$defs/Incident"
+      },
+      "IncidentReport": {
+        "$ref": "governance.schema.json#/$defs/IncidentReport"
+      },
+      "IncidentDecision": {
+        "$ref": "governance.schema.json#/$defs/IncidentDecision"
+      },
+      "IncidentDecisionRequest": {
+        "$ref": "governance.schema.json#/$defs/IncidentDecisionRequest"
+      },
+      "EventEnvelope": {
+        "$ref": "governance.schema.json#/$defs/EventEnvelope"
+      },
+      "Empty": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [],
+        "properties": {}
+      },
+      "Reason": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "reason": {
+            "$ref": "execution.schema.json#/$defs/Text"
+          }
+        }
+      },
+      "AttemptToken": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "revision",
+          "leaseEpoch"
+        ],
+        "properties": {
+          "revision": {
+            "$ref": "execution.schema.json#/$defs/PositiveInteger"
+          },
+          "leaseEpoch": {
+            "$ref": "execution.schema.json#/$defs/PositiveInteger"
+          }
+        }
+      },
+      "StopReport": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "revision",
+          "leaseEpoch",
+          "evidence"
+        ],
+        "properties": {
+          "revision": {
+            "$ref": "execution.schema.json#/$defs/PositiveInteger"
+          },
+          "leaseEpoch": {
+            "$ref": "execution.schema.json#/$defs/PositiveInteger"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "execution.schema.json#/$defs/Artifact"
+            },
+            "minItems": 1,
+            "maxItems": 1000,
+            "uniqueItems": true
+          }
+        }
+      },
+      "AgentStatusChange": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status",
+          "reason"
+        ],
+        "properties": {
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "DRAINING",
+              "DISABLED"
+            ]
+          },
+          "reason": {
+            "$ref": "execution.schema.json#/$defs/Text"
+          }
+        }
+      },
+      "TaskView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "task",
+          "snapshot"
+        ],
+        "properties": {
+          "task": {
+            "$ref": "#/components/schemas/TaskPackage"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/TaskSnapshot"
+          }
+        }
+      },
+      "Claim": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "task",
+          "attempt",
+          "lease"
+        ],
+        "properties": {
+          "task": {
+            "$ref": "#/components/schemas/TaskPackage"
+          },
+          "attempt": {
+            "$ref": "#/components/schemas/TaskAttempt"
+          },
+          "lease": {
+            "$ref": "#/components/schemas/TaskLease"
+          },
+          "repair": {
+            "$ref": "#/components/schemas/FailureEvidence"
+          }
+        }
+      },
+      "FailureEvidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["attemptId", "resultDigest", "manifestUri", "evidence"],
+        "properties": {
+          "attemptId": {"$ref": "execution.schema.json#/$defs/Identifier"},
+          "resultDigest": {"$ref": "execution.schema.json#/$defs/Digest"},
+          "manifestUri": {"type": "string", "format": "uri", "maxLength": 2048},
+          "evidence": {
+            "type": "array", "minItems": 1, "maxItems": 1000, "uniqueItems": true,
+            "items": {"$ref": "execution.schema.json#/$defs/Artifact"}
+          }
+        }
+      },
+      "ResultReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "submissionId",
+          "acceptedAt",
+          "status",
+          "statusUrl"
+        ],
+        "properties": {
+          "submissionId": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          },
+          "acceptedAt": {
+            "$ref": "execution.schema.json#/$defs/Timestamp"
+          },
+          "status": {
+            "const": "VERIFYING"
+          },
+          "statusUrl": {
+            "type": "string",
+            "format": "uri-reference",
+            "pattern": "^/api/v1/projects/"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "message",
+          "traceId",
+          "retryable",
+          "details"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]+$",
+            "maxLength": 128
+          },
+          "message": {
+            "$ref": "execution.schema.json#/$defs/Text"
+          },
+          "traceId": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "details": {
+            "type": "object",
+            "description": "脱敏错误定位信息，由具体错误码定义。"
+          }
+        }
+      },
+      "ProjectCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "projectId"
+        ],
+        "properties": {
+          "projectId": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          }
+        }
+      },
+      "ProjectView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "projectId",
+          "topologyVersion",
+          "agents"
+        ],
+        "properties": {
+          "projectId": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          },
+          "topologyVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "agents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentNode"
+            }
+          }
+        }
+      },
+      "TaskSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "taskId",
+          "revision",
+          "state",
+          "rowVersion",
+          "sourceVersion",
+          "summary",
+          "detailRef"
+        ],
+        "properties": {
+          "taskId": {
+            "$ref": "execution.schema.json#/$defs/Identifier"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "state": {
+            "type": "string"
+          },
+          "rowVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "sourceVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "summary": {
+            "type": "string"
+          },
+          "detailRef": {
+            "type": "string"
+          }
+        }
+      },
+      "LibraryPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "truncated",
+          "nextCursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskSummary"
+            }
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "WorkerCredential": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "token"
+        ],
+        "properties": {
+          "token": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{32,128}$",
+            "writeOnly": true
+          },
+          "hostId": {"$ref": "execution.schema.json#/$defs/Identifier"},
+          "capabilities": {
+            "type": "array", "maxItems": 1000, "uniqueItems": true,
+            "items": {"$ref": "execution.schema.json#/$defs/Identifier"}
+          }
+        },
+        "dependentRequired": {"hostId": ["capabilities"], "capabilities": ["hostId"]}
+      },
+      "Verification": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "accepted",
+          "resultDigest"
+        ],
+        "properties": {
+          "accepted": {
+            "type": "boolean"
+          },
+          "resultDigest": {
+            "$ref": "execution.schema.json#/$defs/Digest"
+          },
+          "routeToBugfix": {"type": "boolean", "default": false}
+        }
+      },
+      "RepositoryBinding": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "slug",
+          "workflowId",
+          "workflowPath",
+          "workflowBlobSha"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+$"
+          },
+          "workflowId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "workflowPath": {
+            "type": "string",
+            "pattern": "^\\.github/workflows/[A-Za-z0-9_-]+\\.ya?ml$"
+          },
+          "workflowBlobSha": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          }
+        }
+      },
+      "CiRunReference": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "runId"
+        ],
+        "properties": {
+          "runId": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    },
+    "responses": {
+      "DispatchState": {
+        "description": "当前项目派发开关",
+        "headers": {"ETag": {"schema": {"type": "string"}}},
+        "content": {"application/json": {"schema": {
+          "type": "object", "additionalProperties": false, "required": ["paused", "rowVersion"],
+          "properties": {"paused": {"type": "boolean"}, "rowVersion": {"type": "integer", "minimum": 1}}
+        }}}
+      },
+      "Error400": {
+        "description": "HTTP 400，业务码见治理与执行契约。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Error401": {
+        "description": "HTTP 401，业务码见治理与执行契约。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Error403": {
+        "description": "HTTP 403，业务码见治理与执行契约。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Error404": {
+        "description": "HTTP 404，业务码见治理与执行契约。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Error409": {
+        "description": "HTTP 409，业务码见治理与执行契约。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Error422": {
+        "description": "HTTP 422，业务码见治理与执行契约。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Error428": {
+        "description": "HTTP 428，业务码见治理与执行契约。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Error429": {
+        "description": "HTTP 429，业务码见治理与执行契约。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        },
+        "headers": {
+          "Retry-After": {
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "重试前等待秒数"
+          }
+        }
+      },
+      "Error503": {
+        "description": "HTTP 503，业务码见治理与执行契约。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        },
+        "headers": {
+          "Retry-After": {
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "重试前等待秒数"
+          }
+        }
+      },
+      "Error410": {
+        "description": "EVENT_CURSOR_EXPIRED，重新建立订阅并查询快照。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}

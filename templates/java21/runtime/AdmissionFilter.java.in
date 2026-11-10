@@ -1,0 +1,70 @@
+package @package@.runtime;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+@Component
+class AdmissionFilter extends OncePerRequestFilter {
+    private final AtomicInteger inFlight = new AtomicInteger();
+    private final RuntimePolicy policy;
+    private final TrafficGuard traffic;
+    private final byte[] writeAuthorization;
+
+    AdmissionFilter(RuntimePolicy policy, TrafficGuard traffic, @Value("${jdda.write-token}") String writeToken) {
+        if (writeToken.length() < 32) throw new IllegalArgumentException("Configure a write token with at least 32 characters.");
+        this.policy = policy;
+        this.traffic = traffic;
+        this.writeAuthorization = ("Bearer " + writeToken).getBytes(StandardCharsets.UTF_8);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return !request.getRequestURI().startsWith("/api/");
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+        if (!Set.of("GET", "HEAD", "OPTIONS").contains(request.getMethod())) {
+            String presented = request.getHeader("Authorization");
+            if (presented == null || !MessageDigest.isEqual(writeAuthorization, presented.getBytes(StandardCharsets.UTF_8))) {
+                response.setStatus(401);
+                response.setHeader("WWW-Authenticate", "Bearer");
+                return;
+            }
+        }
+        var applied = policy.current();
+        response.setHeader("X-JDDA-Config", applied.revision());
+        response.setHeader("X-JDDA-Instance", System.getenv().getOrDefault("HOSTNAME", "local"));
+        int active = inFlight.incrementAndGet();
+        try {
+            if (active > applied.settings().maxInFlight()) {
+                reject(response, "CONCURRENCY_LIMIT");
+                return;
+            }
+            try (var entry = traffic.enter()) {
+                if (entry == null) reject(response, "TRAFFIC_LIMIT");
+                else chain.doFilter(request, response);
+            }
+        } finally {
+            inFlight.decrementAndGet();
+        }
+    }
+
+    private static void reject(HttpServletResponse response, String code) throws IOException {
+        response.setStatus(429);
+        response.setHeader("Retry-After", "1");
+        response.setContentType("application/json");
+        response.getWriter().write("{\"code\":\"" + code + "\"}");
+    }
+}

@@ -1,0 +1,8 @@
+package @package@.runtime;
+
+import java.util.function.Supplier;
+
+@FunctionalInterface
+public interface ProjectCache {
+    String read(String key, Supplier<String> loader);
+}

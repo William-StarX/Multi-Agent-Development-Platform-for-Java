@@ -1,0 +1,61 @@
+{
+  "DRAFT": [
+    "WAITING_DEPENDENCIES",
+    "READY",
+    "CANCEL_REQUESTED",
+    "SUPERSEDED"
+  ],
+  "WAITING_DEPENDENCIES": [
+    "READY",
+    "BLOCKED",
+    "CANCEL_REQUESTED",
+    "SUPERSEDED"
+  ],
+  "READY": [
+    "LEASED",
+    "BLOCKED",
+    "CANCEL_REQUESTED",
+    "SUPERSEDED"
+  ],
+  "LEASED": [
+    "RUNNING",
+    "RETRY_WAIT",
+    "BLOCKED",
+    "FAILED",
+    "CANCEL_REQUESTED"
+  ],
+  "RUNNING": [
+    "VERIFYING",
+    "RETRY_WAIT",
+    "BLOCKED",
+    "FAILED",
+    "CANCEL_REQUESTED"
+  ],
+  "VERIFYING": [
+    "SUCCEEDED",
+    "RETRY_WAIT",
+    "BLOCKED",
+    "FAILED",
+    "CANCEL_REQUESTED"
+  ],
+  "RETRY_WAIT": [
+    "READY",
+    "BLOCKED",
+    "FAILED",
+    "CANCEL_REQUESTED",
+    "SUPERSEDED"
+  ],
+  "BLOCKED": [
+    "READY",
+    "FAILED",
+    "CANCEL_REQUESTED",
+    "SUPERSEDED"
+  ],
+  "CANCEL_REQUESTED": [
+    "CANCELLED"
+  ],
+  "CANCELLED": [],
+  "SUCCEEDED": [],
+  "FAILED": [],
+  "SUPERSEDED": []
+}

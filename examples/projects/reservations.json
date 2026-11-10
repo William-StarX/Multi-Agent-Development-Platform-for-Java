@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "project": "reservation-platform",
+  "group": "io.jdda.sample",
+  "ingress": "nginx",
+  "modules": [
+    {
+      "name": "allocation-service",
+      "replicas": 2,
+      "features": [
+        "postgres",
+        "redis",
+        "rabbitmq",
+        "sentinel"
+      ],
+      "routes": [
+        "/api/allocations",
+        "/api/capacity"
+      ],
+      "migration": "CREATE TABLE capacity_resource (\n    resource_id varchar(40) PRIMARY KEY,\n    remaining integer NOT NULL CHECK (remaining >= 0)\n);\nINSERT INTO capacity_resource(resource_id,remaining) VALUES ('primary',100),('spare',100);\n\nCREATE TABLE allocation_request (\n    request_key varchar(96) PRIMARY KEY,\n    resource_id varchar(40) NOT NULL REFERENCES capacity_resource(resource_id),\n    units integer NOT NULL CHECK (units BETWEEN 1 AND 10),\n    reservation_id uuid NOT NULL UNIQUE,\n    status varchar(16) NOT NULL CHECK (status IN ('PENDING','ALLOCATED','INSUFFICIENT'))\n);"
+    },
+    {
+      "name": "catalog-service",
+      "replicas": 1,
+      "features": [],
+      "routes": [
+        "/api/catalog"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "MAPPER",
+      "module": "allocation-service",
+      "package": "mapper",
+      "files": [
+        "ReservationMapper.java"
+      ],
+      "goal": "Implement the PostgreSQL repository for capacity reservation and idempotency using atomic statements.",
+      "constraints": "Use a public @Repository class ReservationMapper and constructor injection of JdbcTemplate. Provide public record RequestRow(String resourceId, int units, UUID reservationId, String status) nested in the class. Public methods: Optional<Integer> remaining(String resourceId); boolean insertPending(String key, String resourceId, int units, UUID reservationId); RequestRow request(String key); boolean decrementIfAvailable(String resourceId,int units); void finish(String key,String status). Use exactly the schema capacity_resource(resource_id, remaining), allocation_request(request_key,resource_id,units,reservation_id,status). insertPending uses INSERT ... status 'PENDING' ON CONFLICT(request_key) DO NOTHING and returns update count == 1. request selects the existing row by key and maps the UUID with ResultSet.getObject(name, UUID.class). decrementIfAvailable must perform one UPDATE with remaining >= ? and decrement in that same statement. Use bound parameters and no network, transaction starts in the service. Capacity rows are immutable except for remaining units. Return empty when the requested resource is absent."
+    },
+    {
+      "id": "SERVICE",
+      "module": "allocation-service",
+      "package": "service",
+      "files": [
+        "ReservationService.java"
+      ],
+      "goal": "Implement transactional reservations with concurrent idempotency, bounded stock and optional durable events.",
+      "constraints": "Public @Service class ReservationService injects io.jdda.sample.allocation.mapper.ReservationMapper and io.jdda.sample.allocation.runtime.ProjectEvents. Mapper methods: Optional<Integer> remaining(String resourceId); boolean insertPending(String key,String resourceId,int units,UUID reservationId); ReservationMapper.RequestRow request(String key), whose return type is a public record nested inside ReservationMapper. Use ReservationMapper.RequestRow or import io.jdda.sample.allocation.mapper.ReservationMapper.RequestRow explicitly. Record fields are resourceId, units, reservationId, status; boolean decrementIfAvailable(String resourceId,int units); void finish(String key,String status). Provide public nested record Result(String status, UUID reservationId, String resourceId, int units, boolean replay). Public methods Optional<Integer> remaining(String resourceId) and @Transactional Result reserve(String key,String resourceId,int units). If resource absent return status NOT_FOUND. Insert a pending request using a new random UUID with unique key conflict returning false. If false read the committed row in the next SQL statement; if payload differs return KEY_REUSED; otherwise return original status and id with replay true. For new request, conditional decrement once, update request status to ALLOCATED or INSUFFICIENT before returning. On ALLOCATED call events.record(reservationId, \"allocation.created\", reservationId.toString()) in the same transaction. Event API is void record(UUID id,String type,String data), works as no-op or outbox. Only emit for first committed allocation. Use PostgreSQL default read committed, no JVM locks. Do not swallow persistence errors or cache remaining capacity."
+    },
+    {
+      "id": "CLIENT",
+      "module": "allocation-service",
+      "package": "client",
+      "files": [
+        "CatalogClient.java"
+      ],
+      "goal": "Implement a bounded upstream catalog client that uses the optional cache and circuit ports.",
+      "constraints": "Public @Component class CatalogClient with public String catalog(). Inject io.jdda.sample.allocation.runtime.ProjectCache and io.jdda.sample.allocation.runtime.TrafficGuard. Public cache interface String read(String key, Supplier<String> loader). Use cache key \"catalog\" for the static public catalog. TrafficGuard exposes <T> T downstream(Supplier<T> request) and nested CircuitOpen runtime exception. Place cache loader inside read-through and invoke downstream on the actual remote GET only. The catalog service is reached at @Value(\"${CATALOG_URL:http://catalog-service:8080}\") + \"/api/catalog\". Use Java HttpClient with connect timeout <=1s and GET timeout <=1s, reuse one client, follow redirects NEVER, throw an IllegalStateException on non-200 or invalid transport. Restore interrupt status on interruption. Do not catch CircuitOpen. Return the JSON response body as String, cache data is read-only catalog metadata, never allocation stock."
+    },
+    {
+      "id": "CONTROLLER",
+      "module": "allocation-service",
+      "package": "controller",
+      "files": [
+        "AllocationController.java"
+      ],
+      "goal": "Expose the allocation API with distinct business failures and downstream errors.",
+      "constraints": "Public @RestController class AllocationController. Inject io.jdda.sample.allocation.service.ReservationService and io.jdda.sample.allocation.client.CatalogClient. POST /api/allocations expects Idempotency-Key header matching [A-Za-z0-9_-]{8,96} and JSON {\"resourceId\":\"primary\",\"units\":1}. Validate resourceId [a-z][a-z0-9-]{0,39} and units 1..10, return 400 {\"code\":\"INVALID_REQUEST\"} if invalid. A trusted baseline filter validates the write Bearer token, do not reimplement it. Service methods Result reserve(String key,String resourceId,int units) and Optional<Integer> remaining(String resourceId). Result fields are String status, UUID reservationId, String resourceId, int units, boolean replay. Result.status() returns java.lang.String. In a switch use quoted Java string literals, and use the String itself in error JSON. For ALLOCATED return 201 (first) or 200 (replay) with the Result JSON. For INSUFFICIENT and KEY_REUSED return 409 with JSON {\"code\":<status>}. For NOT_FOUND return 404 with that code. GET /api/capacity/{resourceId} returns 200 {\"resourceId\":...,\"remaining\":...} or 404. GET /api/allocations/catalog returns CatalogClient.catalog() with application/json; catch io.jdda.sample.allocation.runtime.TrafficGuard.CircuitOpen and respond 503 {\"code\":\"UPSTREAM_CIRCUIT_OPEN\"}. Map IllegalStateException on this catalog call only to 503 {\"code\":\"UPSTREAM_UNAVAILABLE\"}. Keep methods synchronous so baseline in-flight limit covers execution."
+    },
+    {
+      "id": "CATALOG",
+      "module": "catalog-service",
+      "package": "controller",
+      "files": [
+        "CatalogController.java"
+      ],
+      "goal": "Expose the independent read-only catalog service for the allocation client.",
+      "constraints": "Public @RestController class CatalogController. Public GET /api/catalog returns HTTP 200 with JSON object {\"name\":\"Capacity catalog\",\"resources\":[\"primary\",\"spare\"]}. Use Spring MVC annotations and standard Java Map/List. Catalog is static metadata. No database, Redis, RabbitMQ, Sentinel, hidden external dependency, or required Authorization header for this read."
+    }
+  ]
+}

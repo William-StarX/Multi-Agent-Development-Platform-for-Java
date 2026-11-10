@@ -1,1 +1,10 @@
 target/
+contracts/.venv/
+__pycache__/
+integrations/
+.env
+.env.*
+!.env.example
+*.credential.xml
+*.log
+.idea/

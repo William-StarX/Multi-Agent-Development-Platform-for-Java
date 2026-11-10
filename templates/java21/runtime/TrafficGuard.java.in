@@ -1,0 +1,18 @@
+package @package@.runtime;
+
+import java.util.function.Supplier;
+
+public interface TrafficGuard {
+    interface Permit extends AutoCloseable {
+        @Override void close();
+    }
+
+    class CircuitOpen extends RuntimeException {}
+
+    default void configure(RuntimePolicy.Settings policy) {
+        if (policy.apiQps() != 0 || policy.circuitMinRequests() != 0)
+            throw new IllegalArgumentException("Traffic rules require the Sentinel adapter.");
+    }
+    default Permit enter() { return () -> {}; }
+    default <T> T downstream(Supplier<T> request) { return request.get(); }
+}

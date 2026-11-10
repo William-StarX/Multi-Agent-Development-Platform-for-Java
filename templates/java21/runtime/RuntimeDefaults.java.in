@@ -1,0 +1,11 @@
+package @package@.runtime;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration(proxyBeanMethods = false)
+class RuntimeDefaults {
+    @Bean TrafficGuard directTraffic() { return new TrafficGuard() {}; }
+    @Bean ProjectCache directCache() { return (key, loader) -> loader.get(); }
+    @Bean ProjectEvents noEvents() { return (id, type, data) -> {}; }
+}

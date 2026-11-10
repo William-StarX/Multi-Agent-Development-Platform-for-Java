@@ -1,0 +1,39 @@
+package @package@.runtime;
+
+import java.time.Duration;
+import java.util.function.Supplier;
+import org.springframework.context.annotation.Primary;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
+
+@Primary
+@Component
+class RedisProjectCache implements ProjectCache {
+    private final StringRedisTemplate redis;
+    private final RuntimePolicy policy;
+
+    RedisProjectCache(StringRedisTemplate redis, RuntimePolicy policy) {
+        this.redis = redis;
+        this.policy = policy;
+    }
+
+    @Override
+    public String read(String key, Supplier<String> loader) {
+        int ttl = policy.current().settings().cacheTtlSeconds();
+        if (ttl == 0) return loader.get();
+        String cacheKey = "@service@:" + key;
+        try {
+            String value = redis.opsForValue().get(cacheKey);
+            if (value != null) return value;
+        } catch (DataAccessException e) {
+            return loader.get();
+        }
+        String value = loader.get();
+        if (value != null) {
+            try { redis.opsForValue().set(cacheKey, value, Duration.ofSeconds(ttl)); }
+            catch (DataAccessException ignored) { }
+        }
+        return value;
+    }
+}

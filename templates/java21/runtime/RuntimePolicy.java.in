@@ -1,0 +1,116 @@
+package @package@.runtime;
+
+import com.alibaba.nacos.api.NacosFactory;
+import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
+
+@Component
+public class RuntimePolicy {
+    public record Settings(int maxInFlight, int apiQps, int cacheTtlSeconds,
+            int circuitMinRequests, int circuitOpenSeconds, Map<String, String> parameters) {
+        public Settings {
+            parameters = parameters == null ? Map.of() : Map.copyOf(parameters);
+        }
+    }
+    public record Applied(Settings settings, String revision) {}
+
+    private final ObjectMapper json;
+    private final Environment environment;
+    private final TrafficGuard traffic;
+    private final String group;
+    private volatile Applied current;
+    private ConfigService config;
+    private ScheduledExecutorService refreshes;
+
+    RuntimePolicy(ObjectMapper json, Environment environment, TrafficGuard traffic) {
+        this.json = json;
+        this.environment = environment;
+        this.traffic = traffic;
+        this.group = environment.getProperty("nacos.group", "JDDA_PROJECT");
+    }
+
+    public Applied current() { return current; }
+
+    @PostConstruct
+    void start() throws NacosException {
+        var properties = new Properties();
+        properties.setProperty("serverAddr", environment.getRequiredProperty("nacos.address"));
+        properties.setProperty("namespace", environment.getProperty("nacos.namespace", "public"));
+        properties.setProperty("username", environment.getRequiredProperty("nacos.username"));
+        properties.setProperty("password", environment.getRequiredProperty("nacos.password"));
+        config = NacosFactory.createConfigService(properties);
+        try {
+            apply(config.getConfig("@service@.json", group, 10000));
+            refreshes = Executors.newSingleThreadScheduledExecutor(Thread.ofVirtual().name("nacos-policy").factory());
+            refreshes.scheduleWithFixedDelay(this::refresh, 5, 5, TimeUnit.SECONDS);
+        } catch (NacosException | RuntimeException e) {
+            stop();
+            throw e;
+        }
+    }
+
+    private void refresh() {
+        try {
+            apply(config.getConfig("@service@.json", group, 2000));
+        } catch (NacosException e) {
+            LoggerFactory.getLogger(RuntimePolicy.class).warn("Nacos policy unavailable; keeping current revision");
+        } catch (IllegalArgumentException e) {
+            LoggerFactory.getLogger(RuntimePolicy.class).warn("Rejected invalid Nacos policy; keeping current revision");
+        }
+    }
+
+    private void apply(String content) {
+        if (content == null || content.isBlank() || content.length() > 4096)
+            throw new IllegalArgumentException("Missing or oversized Nacos policy.");
+        Settings settings;
+        String revision;
+        try {
+            settings = json.readerFor(Settings.class).with(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
+                    .with(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                    .without(DeserializationFeature.ACCEPT_FLOAT_AS_INT).readValue(content);
+            revision = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(content.getBytes(StandardCharsets.UTF_8)));
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Invalid Nacos policy.");
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+        if (settings == null || settings.maxInFlight() < 1 || settings.maxInFlight() > 1000
+                || settings.apiQps() < 0 || settings.apiQps() > 10000
+                || settings.cacheTtlSeconds() < 0 || settings.cacheTtlSeconds() > 3600
+                || settings.circuitMinRequests() < 0 || settings.circuitMinRequests() > 1000
+                || settings.circuitOpenSeconds() < 0 || settings.circuitOpenSeconds() > 300
+                || settings.parameters().size() > 16
+                || settings.parameters().entrySet().stream().anyMatch(entry ->
+                        !entry.getKey().matches("[a-z][A-Za-z0-9_.-]{0,63}") || entry.getValue().length() > 256)
+                || ((settings.circuitMinRequests() == 0) != (settings.circuitOpenSeconds() == 0)))
+            throw new IllegalArgumentException("Nacos policy values are outside the supported bounds.");
+        if (current != null && revision.equals(current.revision())) return;
+        traffic.configure(settings);
+        current = new Applied(settings, revision);
+    }
+
+    @PreDestroy
+    void stop() throws NacosException {
+        if (refreshes != null) refreshes.shutdownNow();
+        if (config != null) config.shutDown();
+    }
+}

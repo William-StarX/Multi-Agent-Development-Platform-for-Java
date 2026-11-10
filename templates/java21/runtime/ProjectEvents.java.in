@@ -1,0 +1,8 @@
+package @package@.runtime;
+
+import java.util.UUID;
+
+@FunctionalInterface
+public interface ProjectEvents {
+    void record(UUID id, String type, String data);
+}

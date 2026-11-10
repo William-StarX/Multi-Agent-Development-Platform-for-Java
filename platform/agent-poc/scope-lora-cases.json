@@ -1,0 +1,71 @@
+{
+  "java": {
+    "controller": {
+      "train": ["校验 POST /orders 的空请求体，返回 HTTP 400。", "Map duplicate refund requests to HTTP 409 at POST /refunds.", "Expose GET /stock and return HTTP 404 for an unknown SKU."],
+      "eval": [
+        ["在 PATCH /profiles 的请求入口拒绝非法手机号，返回 HTTP 422。", ["PATCH /profiles", "422"]],
+        ["Bind the `cursor` query parameter for GET /events, returning HTTP 400 for malformed values.", ["cursor", "400"]]
+      ]
+    },
+    "service": {
+      "train": ["在业务层计算会员积分，单笔上限为 300。", "Apply the cancellation policy in the business layer after 24 hours.", "Update the shipping fee calculation so EXPRESS costs 25 cents more."],
+      "eval": [
+        ["调整结算业务规则，只有状态为 VERIFIED 的账户才能使用 5% 折扣。", ["VERIFIED", "5%"]],
+        ["In the business logic, grant one bonus only when the cart total is at least 75 USD.", ["75", "USD"]]
+      ]
+    },
+    "repository": {
+      "train": ["实现按 customer_id 查询最近 10 条发票的持久层方法。", "Fix the persistence query so deleted_at rows are excluded.", "Change the ORM query to sort AuditRecord by created_at descending."],
+      "eval": [
+        ["调整持久层查询，按 tenant_id 过滤并只返回最早 20 条 Ticket。", ["tenant_id", "20"]],
+        ["Update the DAO query to include only rows where archived_at is null, ordered by priority.", ["archived_at", "priority"]]
+      ]
+    }
+  },
+  "database": {
+    "schema": {
+      "train": ["设计 invoices 表，主键为 invoice_id，amount 必须非负。", "Specify the audit_events table layout with a NOT NULL source column.", "Define a foreign key from deliveries.order_id to orders.id."],
+      "eval": [
+        ["设计 sessions 表的结构，expires_at 字段使用 timestamptz 且禁止空值。", ["expires_at", "timestamptz"]],
+        ["Specify a check constraint on payments so currency can only be USD or EUR.", ["USD", "EUR"]]
+      ]
+    },
+    "index": {
+      "train": ["为 orders 的 (tenant_id, created_at) 查询设计联合索引。", "Design a partial index on invoices for paid_at IS NULL.", "Verify the GIN index candidate for audit_events.metadata with EXPLAIN."],
+      "eval": [
+        ["为按 (account_id, occurred_at) 查询的流水表设计索引，用 EXPLAIN 对比。", ["account_id", "EXPLAIN"]],
+        ["Propose a unique index on active users' email with the predicate deactivated_at IS NULL.", ["email", "deactivated_at"]]
+      ]
+    },
+    "migration": {
+      "train": ["编写从 v4 到 v5 的迁移，分批回填 account_code，每批 500 行。", "Prepare a reversible migration to rename item_code to sku_code.", "Script the two-phase migration of user_status and verify rollback on staging."],
+      "eval": [
+        ["为 total_cents 从 int 迁到 bigint 编写可回滚脚本，每批 1000 行。", ["total_cents", "1000"]],
+        ["Write a rollback-safe v8 to v9 migration that backfills customer_ref in batches of 200.", ["customer_ref", "200"]]
+      ]
+    }
+  },
+  "nacos": {
+    "discovery": {
+      "train": ["验证 staging 的 order-service 注册发现，确认下线实例不会被发现。", "Diagnose missing discovery instances for invoice-service in cluster west.", "Check that ephemeral instances for user-api disappear after heartbeat expiry."],
+      "eval": [
+        ["排查 payments-api 在 qa 命名空间的实例注册，验证注销后实例从发现结果消失。", ["payments-api", "qa"]],
+        ["Verify only healthy search-api instances in cluster east are returned by service discovery.", ["search-api", "east"]]
+      ]
+    },
+    "config": {
+      "train": ["在 staging 调整 order.yaml 配置集，重试上限设为 2。", "Update the test config dataId cache.yaml in group PAYMENTS.", "Verify hot reload of the timeout setting in gateway.properties."],
+      "eval": [
+        ["在预发环境的 billing.yaml 配置集中调整 readTimeoutMs 为 7000，验证热加载。", ["billing.yaml", "7000"]],
+        ["Check refresh of the new batchSize=250 setting in reports.properties under QA_GROUP.", ["250", "QA_GROUP"]]
+      ]
+    },
+    "acl": {
+      "train": ["限制 ci-reader 只能读 test 命名空间的配置。", "Audit write privileges for role billing-editor in staging.", "Revoke UPDATE access for role visitor on the PAYMENTS group."],
+      "eval": [
+        ["给 monitor-viewer 授予 sandbox 命名空间只读权限，确认写请求被拒绝。", ["monitor-viewer", "sandbox"]],
+        ["Remove PUBLISH rights for support-ro in namespace training and verify reads still work.", ["support-ro", "PUBLISH"]]
+      ]
+    }
+  }
+}

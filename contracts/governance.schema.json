@@ -1,0 +1,1267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JDDA governance contracts v1 draft",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/AgentNode"
+    },
+    {
+      "$ref": "#/$defs/Approval"
+    },
+    {
+      "$ref": "#/$defs/Incident"
+    },
+    {
+      "$ref": "#/$defs/IncidentDecision"
+    },
+    {
+      "$ref": "#/$defs/EventEnvelope"
+    }
+  ],
+  "$defs": {
+    "Identifier": {
+      "$ref": "execution.schema.json#/$defs/Identifier"
+    },
+    "PositiveInteger": {
+      "$ref": "execution.schema.json#/$defs/PositiveInteger"
+    },
+    "Counter": {
+      "$ref": "execution.schema.json#/$defs/Counter"
+    },
+    "Timestamp": {
+      "$ref": "execution.schema.json#/$defs/Timestamp"
+    },
+    "Commit": {
+      "$ref": "execution.schema.json#/$defs/Commit"
+    },
+    "Digest": {
+      "$ref": "execution.schema.json#/$defs/Digest"
+    },
+    "Text": {
+      "$ref": "execution.schema.json#/$defs/Text"
+    },
+    "Artifact": {
+      "$ref": "execution.schema.json#/$defs/Artifact"
+    },
+    "Budget": {
+      "$ref": "execution.schema.json#/$defs/Budget"
+    },
+    "Dependency": {
+      "$ref": "execution.schema.json#/$defs/Dependency"
+    },
+    "AgentRegistration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "projectId",
+        "agentId",
+        "parentId",
+        "roles",
+        "capabilities",
+        "endpoint",
+        "hostId"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "1"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "agentId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "parentId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "ROOT",
+              "MANAGER",
+              "WORKER",
+              "LIBRARY",
+              "BUGFIX"
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "minItems": 0,
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "endpoint": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uri",
+              "pattern": "^https://",
+              "maxLength": 2048
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "hostId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "roles": {
+                "contains": {
+                  "const": "ROOT"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "parentId": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "parentId": {
+                "$ref": "#/$defs/Identifier"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "roles": {
+                "contains": {
+                  "const": "LIBRARY"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "roles": {
+                "const": [
+                  "LIBRARY"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "roles": {
+                "contains": {
+                  "const": "BUGFIX"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "roles": {
+                "const": [
+                  "BUGFIX"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AgentNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "projectId",
+        "agentId",
+        "parentId",
+        "roles",
+        "capabilities",
+        "endpoint",
+        "hostId",
+        "topologyVersion",
+        "rowVersion",
+        "status"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "1"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "agentId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "parentId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "ROOT",
+              "MANAGER",
+              "WORKER",
+              "LIBRARY",
+              "BUGFIX"
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "minItems": 0,
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "endpoint": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uri",
+              "pattern": "^https://",
+              "maxLength": 2048
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "hostId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "topologyVersion": {
+          "$ref": "#/$defs/PositiveInteger"
+        },
+        "rowVersion": {
+          "$ref": "#/$defs/PositiveInteger"
+        },
+        "status": {
+          "enum": [
+            "ACTIVE",
+            "DRAINING",
+            "DISABLED"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "roles": {
+                "contains": {
+                  "const": "ROOT"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "parentId": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "parentId": {
+                "$ref": "#/$defs/Identifier"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "roles": {
+                "contains": {
+                  "const": "LIBRARY"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "roles": {
+                "const": [
+                  "LIBRARY"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "roles": {
+                "contains": {
+                  "const": "BUGFIX"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "roles": {
+                "const": [
+                  "BUGFIX"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ParentChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parentId",
+        "topologyVersion"
+      ],
+      "properties": {
+        "parentId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "topologyVersion": {
+          "$ref": "#/$defs/PositiveInteger"
+        }
+      }
+    },
+    "ApprovalScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "objectId",
+        "objectVersion",
+        "contentDigest",
+        "candidateCommit"
+      ],
+      "properties": {
+        "operation": {
+          "enum": [
+            "PLAN_PUBLISH",
+            "CONTRACT_PUBLISH",
+            "INTEGRATION_MERGE",
+            "BUDGET_INCREASE"
+          ]
+        },
+        "objectId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "objectVersion": {
+          "$ref": "#/$defs/PositiveInteger"
+        },
+        "contentDigest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "candidateCommit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Commit"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "INTEGRATION_MERGE"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "candidateCommit": {
+                "$ref": "#/$defs/Commit"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "candidateCommit": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ApprovalRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "projectId",
+        "scope",
+        "expiresAt",
+        "reason"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "1"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "scope": {
+          "$ref": "#/$defs/ApprovalScope"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "reason": {
+          "$ref": "#/$defs/Text"
+        }
+      }
+    },
+    "ApprovalDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision",
+        "reason"
+      ],
+      "properties": {
+        "decision": {
+          "enum": [
+            "APPROVE",
+            "REJECT"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/Text"
+        }
+      }
+    },
+    "Approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "projectId",
+        "approvalId",
+        "scope",
+        "rowVersion",
+        "status",
+        "requestedBy",
+        "requestedAt",
+        "expiresAt",
+        "requestReason",
+        "decidedBy",
+        "decidedAt",
+        "decisionReason"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "1"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "approvalId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "scope": {
+          "$ref": "#/$defs/ApprovalScope"
+        },
+        "rowVersion": {
+          "$ref": "#/$defs/PositiveInteger"
+        },
+        "status": {
+          "enum": [
+            "PENDING",
+            "APPROVED",
+            "REJECTED",
+            "EXPIRED",
+            "INVALIDATED"
+          ]
+        },
+        "requestedBy": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "requestedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "expiresAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "requestReason": {
+          "$ref": "#/$defs/Text"
+        },
+        "decidedBy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "decidedAt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "decisionReason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Text"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "APPROVED",
+                  "REJECTED"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "decidedBy": {
+                "$ref": "#/$defs/Identifier"
+              },
+              "decidedAt": {
+                "$ref": "#/$defs/Timestamp"
+              },
+              "decisionReason": {
+                "$ref": "#/$defs/Text"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "PENDING"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "decidedBy": {
+                "type": "null"
+              },
+              "decidedAt": {
+                "type": "null"
+              },
+              "decisionReason": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "IncidentReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "projectId",
+        "taskId",
+        "revision",
+        "attemptId",
+        "leaseEpoch",
+        "errorType",
+        "errorCode",
+        "fingerprint",
+        "firstSeenAt",
+        "lastSeenAt",
+        "baseCommit",
+        "resultCommit",
+        "contractVersion",
+        "failedTests",
+        "logRefs",
+        "triedActions",
+        "blockedDependencies",
+        "remainingBudget",
+        "suggestedActions",
+        "requestedDecision"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "1"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "taskId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "revision": {
+          "$ref": "#/$defs/PositiveInteger"
+        },
+        "attemptId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "leaseEpoch": {
+          "$ref": "#/$defs/PositiveInteger"
+        },
+        "errorType": {
+          "enum": [
+            "TRANSIENT",
+            "IMPLEMENTATION",
+            "CONTRACT",
+            "INTEGRATION",
+            "INFRASTRUCTURE",
+            "POLICY_SECURITY",
+            "REQUIREMENT"
+          ]
+        },
+        "errorCode": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "fingerprint": {
+          "$ref": "#/$defs/Digest"
+        },
+        "firstSeenAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "lastSeenAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "baseCommit": {
+          "$ref": "#/$defs/Commit"
+        },
+        "resultCommit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Commit"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "contractVersion": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "failedTests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "minItems": 0,
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "logRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Artifact"
+          },
+          "minItems": 1,
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "triedActions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "minItems": 0,
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "blockedDependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Dependency"
+          },
+          "minItems": 0,
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "remainingBudget": {
+          "$ref": "#/$defs/Budget"
+        },
+        "suggestedActions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "minItems": 0,
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "requestedDecision": {
+          "$ref": "#/$defs/Text"
+        }
+      }
+    },
+    "Incident": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "projectId",
+        "taskId",
+        "revision",
+        "attemptId",
+        "leaseEpoch",
+        "errorType",
+        "errorCode",
+        "fingerprint",
+        "firstSeenAt",
+        "lastSeenAt",
+        "baseCommit",
+        "resultCommit",
+        "contractVersion",
+        "failedTests",
+        "logRefs",
+        "triedActions",
+        "blockedDependencies",
+        "remainingBudget",
+        "suggestedActions",
+        "requestedDecision",
+        "incidentId",
+        "reporterId",
+        "rowVersion",
+        "topologyVersion",
+        "escalationPath",
+        "escalationIndex",
+        "assignedTo",
+        "status",
+        "ackDeadline",
+        "decisionDeadline"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "1"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "taskId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "revision": {
+          "$ref": "#/$defs/PositiveInteger"
+        },
+        "attemptId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "leaseEpoch": {
+          "$ref": "#/$defs/PositiveInteger"
+        },
+        "errorType": {
+          "enum": [
+            "TRANSIENT",
+            "IMPLEMENTATION",
+            "CONTRACT",
+            "INTEGRATION",
+            "INFRASTRUCTURE",
+            "POLICY_SECURITY",
+            "REQUIREMENT"
+          ]
+        },
+        "errorCode": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "fingerprint": {
+          "$ref": "#/$defs/Digest"
+        },
+        "firstSeenAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "lastSeenAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "baseCommit": {
+          "$ref": "#/$defs/Commit"
+        },
+        "resultCommit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Commit"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "contractVersion": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "failedTests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "minItems": 0,
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "logRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Artifact"
+          },
+          "minItems": 1,
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "triedActions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "minItems": 0,
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "blockedDependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Dependency"
+          },
+          "minItems": 0,
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "remainingBudget": {
+          "$ref": "#/$defs/Budget"
+        },
+        "suggestedActions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Text"
+          },
+          "minItems": 0,
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "requestedDecision": {
+          "$ref": "#/$defs/Text"
+        },
+        "incidentId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "reporterId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "rowVersion": {
+          "$ref": "#/$defs/PositiveInteger"
+        },
+        "topologyVersion": {
+          "$ref": "#/$defs/PositiveInteger"
+        },
+        "escalationPath": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "minItems": 0,
+          "maxItems": 64,
+          "uniqueItems": true
+        },
+        "escalationIndex": {
+          "$ref": "#/$defs/Counter"
+        },
+        "assignedTo": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "OPEN",
+            "ACKNOWLEDGED",
+            "ESCALATED",
+            "AWAITING_HUMAN",
+            "RESOLVED"
+          ]
+        },
+        "ackDeadline": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "decisionDeadline": {
+          "$ref": "#/$defs/Timestamp"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "OPEN",
+                  "ACKNOWLEDGED",
+                  "ESCALATED"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "assignedTo": {
+                "$ref": "#/$defs/Identifier"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "IncidentDecisionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision",
+        "reason",
+        "deadline",
+        "relatedTasks"
+      ],
+      "properties": {
+        "decision": {
+          "enum": [
+            "REQUEST_INFO",
+            "RETRY",
+            "REPAIR",
+            "REASSIGN",
+            "CONTRACT_CHANGE",
+            "ESCALATE",
+            "HUMAN",
+            "STOP"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/Text"
+        },
+        "deadline": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "relatedTasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "taskId",
+              "revision"
+            ],
+            "properties": {
+              "taskId": {
+                "$ref": "#/$defs/Identifier"
+              },
+              "revision": {
+                "$ref": "#/$defs/PositiveInteger"
+              }
+            }
+          },
+          "minItems": 0,
+          "maxItems": 1000,
+          "uniqueItems": true
+        }
+      }
+    },
+    "IncidentDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "projectId",
+        "decisionId",
+        "incidentId",
+        "incidentVersion",
+        "actorId",
+        "decidedAt",
+        "decision",
+        "reason",
+        "deadline",
+        "relatedTasks"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "1"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "decisionId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "incidentId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "incidentVersion": {
+          "$ref": "#/$defs/PositiveInteger"
+        },
+        "actorId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "decidedAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "decision": {
+          "enum": [
+            "REQUEST_INFO",
+            "RETRY",
+            "REPAIR",
+            "REASSIGN",
+            "CONTRACT_CHANGE",
+            "ESCALATE",
+            "HUMAN",
+            "STOP"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/Text"
+        },
+        "deadline": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "relatedTasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "taskId",
+              "revision"
+            ],
+            "properties": {
+              "taskId": {
+                "$ref": "#/$defs/Identifier"
+              },
+              "revision": {
+                "$ref": "#/$defs/PositiveInteger"
+              }
+            }
+          },
+          "minItems": 0,
+          "maxItems": 1000,
+          "uniqueItems": true
+        }
+      }
+    },
+    "EventEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "projectId",
+        "eventId",
+        "eventType",
+        "aggregateId",
+        "aggregateVersion",
+        "revision",
+        "occurredAt",
+        "traceId",
+        "causationId",
+        "payload"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "1"
+        },
+        "projectId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "eventId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "eventType": {
+          "enum": [
+            "TASK_STATE_CHANGED",
+            "AGENT_CHANGED",
+            "APPROVAL_CHANGED",
+            "INCIDENT_CHANGED"
+          ]
+        },
+        "aggregateId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "aggregateVersion": {
+          "$ref": "#/$defs/PositiveInteger"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PositiveInteger"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "occurredAt": {
+          "$ref": "#/$defs/Timestamp"
+        },
+        "traceId": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "causationId": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "payload": {
+          "type": "object"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "eventType": {
+                "const": "TASK_STATE_CHANGED"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "$ref": "execution.schema.json#/$defs/TaskSnapshot"
+              },
+              "revision": {
+                "$ref": "#/$defs/PositiveInteger"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "eventType": {
+                "const": "AGENT_CHANGED"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "$ref": "#/$defs/AgentNode"
+              },
+              "revision": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "eventType": {
+                "const": "APPROVAL_CHANGED"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "$ref": "#/$defs/Approval"
+              },
+              "revision": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "eventType": {
+                "const": "INCIDENT_CHANGED"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "payload": {
+                "$ref": "#/$defs/Incident"
+              },
+              "revision": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "maven": "maven:3.9.11-eclipse-temurin-21@sha256:6fdc855a6ed81d288ca7ca37ac6ff5e9308b612485c0801d70b25a858c83d237",
+  "jre": "eclipse-temurin:21-jre@sha256:0b99b3376fbb50dbf9c0af8535fdd5b8eb0d3fdfc8b1e4967f383b6919f6901a",
+  "nacos": "nacos/nacos-server:v3.3.0@sha256:bf18e41d09efd4e72edc46b010d42dca49f776421413cb2637be1fff0d6ef90f",
+  "postgres": "postgres:18-alpine@sha256:123b17998ccaf47e53b502e8c6a1e79afd8f579c6f3eec83c563da026f957395",
+  "nginx": "nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236",
+  "redis": "redis:7.4-alpine@sha256:7b1753b4c5ad8458906c272a8132b8c15f5557b000379eb115fb239706a384b7",
+  "rabbitmq": "rabbitmq:4-management-alpine@sha256:4841f6384ef8313c3594cd3f2e9f40c10805f8a61c45f08a9a5d9ddea8199267"
+}

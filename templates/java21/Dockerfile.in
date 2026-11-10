@@ -1,0 +1,18 @@
+ARG MODULE
+FROM @maven@ AS build
+ARG MODULE
+WORKDIR /build
+COPY pom.xml ./
+COPY ${MODULE}/pom.xml ${MODULE}/pom.xml
+COPY ${MODULE}/src ${MODULE}/src
+RUN --mount=type=cache,target=/root/.m2 mvn -B -ntp -f ${MODULE}/pom.xml package -DskipTests
+
+FROM @jre@
+ARG SOURCE_SHA
+LABEL org.opencontainers.image.revision="${SOURCE_SHA}"
+WORKDIR /app
+ARG MODULE
+COPY --from=build /build/${MODULE}/target/app.jar /app/app.jar
+USER 10001:10001
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

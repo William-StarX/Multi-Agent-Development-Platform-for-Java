@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: jdda-control-center
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/jdda_local
+    username: jdda_local
+    password: ${JDDA_DB_PASSWORD}
+
+server:
+  address: ${JDDA_BIND_ADDRESS:127.0.0.1}
+  port: ${JDDA_PORT:18080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+jdda:
+  governance:
+    nacos:
+      enabled: ${JDDA_NACOS_ENABLED:false}
+      server-addr: ${JDDA_NACOS_SERVER_ADDR:}
+      namespace: ${JDDA_NACOS_NAMESPACE:}
+      group: ${JDDA_NACOS_GROUP:JDDA}
+      data-id: ${JDDA_NACOS_DATA_ID:jdda-governance.json}
+      username: ${JDDA_NACOS_USERNAME:}
+      password: ${JDDA_NACOS_PASSWORD:}

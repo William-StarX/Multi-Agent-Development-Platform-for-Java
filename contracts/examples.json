@@ -1,0 +1,108 @@
+{
+  "TaskPackage": {
+    "schemaVersion": "1",
+    "projectId": "demo-java",
+    "taskId": "ORDER-017",
+    "revision": 1,
+    "parentTaskId": "ORDER-001",
+    "planVersion": 3,
+    "managerId": "manager-order",
+    "topologyVersion": 2,
+    "repoId": "repo-demo",
+    "baseCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "contractVersion": "contract-1.2",
+    "dependencies": [
+      {
+        "taskId": "DB-003",
+        "revision": 1,
+        "gate": "INTEGRATED"
+      }
+    ],
+    "inputArtifacts": [],
+    "ownedPaths": [
+      "order-service/src/**"
+    ],
+    "requiredCapabilities": [
+      "java",
+      "maven"
+    ],
+    "toolPolicyId": "java-worker-restricted",
+    "resources": {
+      "cpu": 2,
+      "memoryMiB": 4096
+    },
+    "timeoutSeconds": 1800,
+    "maxAttempts": 3,
+    "budget": {
+      "tokenBudget": 80000,
+      "costBudget": {
+        "currency": "CNY",
+        "limit": "30.00"
+      }
+    },
+    "acceptanceProfile": "java-web-standard",
+    "expectedArtifacts": [
+      "git-commit",
+      "test-report"
+    ],
+    "reviewPolicy": "manual"
+  },
+  "TaskSnapshot": {
+    "schemaVersion": "1",
+    "projectId": "demo-java",
+    "taskId": "ORDER-017",
+    "revision": 1,
+    "state": "RUNNING",
+    "rowVersion": 4,
+    "leaseEpoch": 1,
+    "currentAttemptId": "attempt-1",
+    "updatedAt": "2026-11-09T09:00:10Z"
+  },
+  "TaskAttempt": {
+    "schemaVersion": "1",
+    "projectId": "demo-java",
+    "taskId": "ORDER-017",
+    "revision": 1,
+    "attemptId": "attempt-1",
+    "attemptNumber": 1,
+    "leaseEpoch": 1,
+    "workerId": "worker-1",
+    "hostId": "host-1",
+    "slotId": "slot-1",
+    "state": "RUNNING",
+    "createdAt": "2026-11-09T09:00:00Z",
+    "finishedAt": null
+  },
+  "TaskLease": {
+    "schemaVersion": "1",
+    "projectId": "demo-java",
+    "taskId": "ORDER-017",
+    "revision": 1,
+    "attemptId": "attempt-1",
+    "leaseEpoch": 1,
+    "workerId": "worker-1",
+    "issuedAt": "2026-11-09T09:00:00Z",
+    "lastHeartbeatAt": "2026-11-09T09:00:10Z",
+    "expiresAt": "2026-11-09T09:01:10Z",
+    "status": "ACTIVE"
+  },
+  "ResultSubmission": {
+    "schemaVersion": "1",
+    "projectId": "demo-java",
+    "taskId": "ORDER-017",
+    "revision": 1,
+    "attemptId": "attempt-1",
+    "leaseEpoch": 1,
+    "outcome": "PASSED",
+    "resultCommit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "resultDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "manifestUri": "https://artifacts.example.test/attempt-1/result.json",
+    "evidence": [
+      {
+        "artifactId": "tests-1",
+        "uri": "https://artifacts.example.test/tests-1.json",
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ]
+  }
+}

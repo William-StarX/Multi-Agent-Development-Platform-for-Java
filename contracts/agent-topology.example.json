@@ -1,0 +1,481 @@
+{
+  "nodes": [
+    {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "agentId": "root",
+      "parentId": null,
+      "roles": [
+        "ROOT"
+      ],
+      "capabilities": [],
+      "endpoint": null,
+      "hostId": null,
+      "topologyVersion": 1,
+      "rowVersion": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "agentId": "library",
+      "parentId": "root",
+      "roles": [
+        "LIBRARY"
+      ],
+      "capabilities": [],
+      "endpoint": null,
+      "hostId": null,
+      "topologyVersion": 1,
+      "rowVersion": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "agentId": "bugfix",
+      "parentId": "root",
+      "roles": [
+        "BUGFIX"
+      ],
+      "capabilities": [],
+      "endpoint": null,
+      "hostId": null,
+      "topologyVersion": 1,
+      "rowVersion": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "agentId": "manager-business",
+      "parentId": "root",
+      "roles": [
+        "MANAGER"
+      ],
+      "capabilities": [],
+      "endpoint": null,
+      "hostId": null,
+      "topologyVersion": 1,
+      "rowVersion": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "agentId": "module-order",
+      "parentId": "manager-business",
+      "roles": [
+        "MANAGER"
+      ],
+      "capabilities": [],
+      "endpoint": null,
+      "hostId": null,
+      "topologyVersion": 1,
+      "rowVersion": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "agentId": "package-order-controller",
+      "parentId": "module-order",
+      "roles": [
+        "WORKER"
+      ],
+      "capabilities": [],
+      "endpoint": null,
+      "hostId": null,
+      "topologyVersion": 1,
+      "rowVersion": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "agentId": "package-order-service",
+      "parentId": "module-order",
+      "roles": [
+        "WORKER"
+      ],
+      "capabilities": [],
+      "endpoint": null,
+      "hostId": null,
+      "topologyVersion": 1,
+      "rowVersion": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "agentId": "package-order-repository",
+      "parentId": "module-order",
+      "roles": [
+        "WORKER"
+      ],
+      "capabilities": [],
+      "endpoint": null,
+      "hostId": null,
+      "topologyVersion": 1,
+      "rowVersion": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "agentId": "module-inventory",
+      "parentId": "manager-business",
+      "roles": [
+        "MANAGER"
+      ],
+      "capabilities": [],
+      "endpoint": null,
+      "hostId": null,
+      "topologyVersion": 1,
+      "rowVersion": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "agentId": "package-inventory-service",
+      "parentId": "module-inventory",
+      "roles": [
+        "WORKER"
+      ],
+      "capabilities": [],
+      "endpoint": null,
+      "hostId": null,
+      "topologyVersion": 1,
+      "rowVersion": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "agentId": "package-inventory-repository",
+      "parentId": "module-inventory",
+      "roles": [
+        "WORKER"
+      ],
+      "capabilities": [],
+      "endpoint": null,
+      "hostId": null,
+      "topologyVersion": 1,
+      "rowVersion": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "agentId": "scope-database",
+      "parentId": "manager-business",
+      "roles": [
+        "MANAGER"
+      ],
+      "capabilities": [],
+      "endpoint": null,
+      "hostId": null,
+      "topologyVersion": 1,
+      "rowVersion": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "agentId": "task-database-schema",
+      "parentId": "scope-database",
+      "roles": [
+        "WORKER"
+      ],
+      "capabilities": [],
+      "endpoint": null,
+      "hostId": null,
+      "topologyVersion": 1,
+      "rowVersion": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "agentId": "task-database-migration",
+      "parentId": "scope-database",
+      "roles": [
+        "WORKER"
+      ],
+      "capabilities": [],
+      "endpoint": null,
+      "hostId": null,
+      "topologyVersion": 1,
+      "rowVersion": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "agentId": "scope-nacos",
+      "parentId": "manager-business",
+      "roles": [
+        "MANAGER"
+      ],
+      "capabilities": [],
+      "endpoint": null,
+      "hostId": null,
+      "topologyVersion": 1,
+      "rowVersion": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "agentId": "task-nacos-discovery",
+      "parentId": "scope-nacos",
+      "roles": [
+        "WORKER"
+      ],
+      "capabilities": [],
+      "endpoint": null,
+      "hostId": null,
+      "topologyVersion": 1,
+      "rowVersion": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "agentId": "task-nacos-configuration",
+      "parentId": "scope-nacos",
+      "roles": [
+        "WORKER"
+      ],
+      "capabilities": [],
+      "endpoint": null,
+      "hostId": null,
+      "topologyVersion": 1,
+      "rowVersion": 1,
+      "status": "ACTIVE"
+    }
+  ],
+  "collaborationLinks": [
+    [
+      "root",
+      "library"
+    ],
+    [
+      "root",
+      "bugfix"
+    ],
+    [
+      "library",
+      "bugfix"
+    ],
+    [
+      "root",
+      "manager-business"
+    ],
+    [
+      "manager-business",
+      "module-order"
+    ],
+    [
+      "module-order",
+      "package-order-controller"
+    ],
+    [
+      "module-order",
+      "package-order-service"
+    ],
+    [
+      "module-order",
+      "package-order-repository"
+    ],
+    [
+      "manager-business",
+      "module-inventory"
+    ],
+    [
+      "module-inventory",
+      "package-inventory-service"
+    ],
+    [
+      "module-inventory",
+      "package-inventory-repository"
+    ],
+    [
+      "library",
+      "manager-business"
+    ],
+    [
+      "library",
+      "module-order"
+    ],
+    [
+      "library",
+      "package-order-controller"
+    ],
+    [
+      "library",
+      "package-order-service"
+    ],
+    [
+      "library",
+      "package-order-repository"
+    ],
+    [
+      "library",
+      "module-inventory"
+    ],
+    [
+      "library",
+      "package-inventory-service"
+    ],
+    [
+      "library",
+      "package-inventory-repository"
+    ],
+    [
+      "manager-business",
+      "scope-database"
+    ],
+    [
+      "library",
+      "scope-database"
+    ],
+    [
+      "scope-database",
+      "task-database-schema"
+    ],
+    [
+      "library",
+      "task-database-schema"
+    ],
+    [
+      "scope-database",
+      "task-database-migration"
+    ],
+    [
+      "library",
+      "task-database-migration"
+    ],
+    [
+      "manager-business",
+      "scope-nacos"
+    ],
+    [
+      "library",
+      "scope-nacos"
+    ],
+    [
+      "scope-nacos",
+      "task-nacos-discovery"
+    ],
+    [
+      "library",
+      "task-nacos-discovery"
+    ],
+    [
+      "scope-nacos",
+      "task-nacos-configuration"
+    ],
+    [
+      "library",
+      "task-nacos-configuration"
+    ]
+  ],
+  "workAssignments": [
+    {
+      "agentId": "module-order",
+      "kind": "MODULE",
+      "modulePath": "order"
+    },
+    {
+      "agentId": "package-order-controller",
+      "kind": "PACKAGE",
+      "modulePath": "order",
+      "javaPackage": "demo.order.controller",
+      "ownedPaths": [
+        "order/src/main/java/demo/order/controller/**",
+        "order/src/test/java/demo/order/controller/**"
+      ]
+    },
+    {
+      "agentId": "package-order-service",
+      "kind": "PACKAGE",
+      "modulePath": "order",
+      "javaPackage": "demo.order.service",
+      "ownedPaths": [
+        "order/src/main/java/demo/order/service/**",
+        "order/src/test/java/demo/order/service/**"
+      ]
+    },
+    {
+      "agentId": "package-order-repository",
+      "kind": "PACKAGE",
+      "modulePath": "order",
+      "javaPackage": "demo.order.repository",
+      "ownedPaths": [
+        "order/src/main/java/demo/order/repository/**",
+        "order/src/test/java/demo/order/repository/**"
+      ]
+    },
+    {
+      "agentId": "module-inventory",
+      "kind": "MODULE",
+      "modulePath": "inventory"
+    },
+    {
+      "agentId": "package-inventory-service",
+      "kind": "PACKAGE",
+      "modulePath": "inventory",
+      "javaPackage": "demo.inventory.service",
+      "ownedPaths": [
+        "inventory/src/main/java/demo/inventory/service/**",
+        "inventory/src/test/java/demo/inventory/service/**"
+      ]
+    },
+    {
+      "agentId": "package-inventory-repository",
+      "kind": "PACKAGE",
+      "modulePath": "inventory",
+      "javaPackage": "demo.inventory.repository",
+      "ownedPaths": [
+        "inventory/src/main/java/demo/inventory/repository/**",
+        "inventory/src/test/java/demo/inventory/repository/**"
+      ]
+    },
+    {
+      "agentId": "scope-database",
+      "kind": "DATABASE",
+      "scopeRef": "database-design"
+    },
+    {
+      "agentId": "task-database-schema",
+      "kind": "TASK",
+      "scopeRef": "database-design/schema",
+      "deliverable": "schema design and verification evidence"
+    },
+    {
+      "agentId": "task-database-migration",
+      "kind": "TASK",
+      "scopeRef": "database-design/migration",
+      "deliverable": "migration design and verification evidence"
+    },
+    {
+      "agentId": "scope-nacos",
+      "kind": "SERVICE_GOVERNANCE",
+      "scopeRef": "nacos-design"
+    },
+    {
+      "agentId": "task-nacos-discovery",
+      "kind": "TASK",
+      "scopeRef": "nacos-design/discovery",
+      "deliverable": "discovery design and verification evidence"
+    },
+    {
+      "agentId": "task-nacos-configuration",
+      "kind": "TASK",
+      "scopeRef": "nacos-design/configuration",
+      "deliverable": "configuration design and verification evidence"
+    }
+  ]
+}

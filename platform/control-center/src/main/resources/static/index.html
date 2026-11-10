@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JDDA 控制台</title>
+    <link rel="stylesheet" href="/console.css">
+    <script src="/console.js" defer></script>
+</head>
+<body>
+<header class="shell heading">
+    <div class="brand" aria-hidden="true">JD</div>
+    <div><h1>JDDA 控制台</h1><p>查看任务交接、执行证据和派发状态</p></div>
+</header>
+<main class="shell">
+    <section id="sign-in" class="card">
+        <h2>连接本机控制服务</h2>
+        <p>在项目目录的 PowerShell 中运行以下命令。启动脚本会读取本机凭据并打开控制台。</p>
+        <pre><code>.\scripts\Open-PlatformConsole.ps1</code></pre>
+    </section>
+    <p id="notice" class="notice" role="status" hidden></p>
+    <p id="error" class="error" role="alert" hidden></p>
+    <div id="workspace" hidden>
+        <section class="card split" aria-labelledby="dispatch-title">
+            <div>
+                <h2 id="dispatch-title">项目派发</h2>
+                <label for="project">项目</label>
+                <div class="actions">
+                    <select id="project"></select>
+                    <button id="more-projects" type="button" hidden>加载更多项目</button>
+                </div>
+            </div>
+            <div class="actions">
+                <span id="dispatch-state" class="badge" aria-live="polite">等待读取</span>
+                <button id="toggle-dispatch" class="primary" type="button" disabled>暂停派发</button>
+                <button id="refresh" type="button">刷新</button>
+            </div>
+        </section>
+        <section class="card" aria-labelledby="tasks-title">
+            <div class="split">
+                <h2 id="tasks-title">任务记录</h2>
+                <form id="search" class="actions">
+                    <label for="query">任务 ID</label>
+                    <input id="query" type="search" maxlength="128" placeholder="按任务 ID 搜索">
+                    <button id="search-button" type="submit">搜索</button>
+                </form>
+            </div>
+            <p id="empty" hidden>没有匹配的任务。</p>
+            <div class="table-wrap">
+                <table aria-labelledby="tasks-title">
+                    <thead><tr><th scope="col">任务 ID</th><th scope="col">修订</th><th scope="col">状态</th><th scope="col">详情</th></tr></thead>
+                    <tbody id="tasks"></tbody>
+                </table>
+            </div>
+            <div class="actions pagination">
+                <button id="previous" type="button" disabled>上一页</button>
+                <span id="page" aria-live="polite">第 1 页</span>
+                <button id="next" type="button" disabled>下一页</button>
+            </div>
+        </section>
+        <section id="trace" class="card trace" aria-labelledby="trace-title" hidden>
+            <div class="split">
+                <h2 id="trace-title" tabindex="-1">任务轨迹</h2>
+                <span id="trace-state" class="badge"></span>
+            </div>
+            <h3>用户介入</h3>
+            <ol id="guidance-history" class="timeline"></ol>
+            <p id="guidance-empty" class="muted">暂无用户指令。</p>
+            <p id="guidance-unavailable" class="muted" hidden>此任务当前无法接收新指令。</p>
+            <form id="guidance-form" hidden>
+                <label for="guidance-text">给执行 Agent 的指令</label>
+                <textarea id="guidance-text" rows="3" maxlength="1200" required aria-describedby="guidance-hint"></textarea>
+                <p id="guidance-hint" class="muted">执行 Agent 会在检查点采用新指令，任务范围和验收条件照常生效。指令会发送给执行模型，请避免输入密钥或私有源码。</p>
+                <button id="guidance-submit" class="primary" type="submit">发送指令</button>
+            </form>
+            <p id="guidance-status" class="muted" role="status" hidden></p>
+            <h3>Agent 决策摘要与交接</h3>
+            <p id="trace-goal" class="muted"></p>
+            <ol id="trace-delegation" class="timeline"></ol>
+            <h3>执行尝试</h3>
+            <ol id="trace-attempts" class="timeline"></ol>
+            <h3>资料库整合与 CI</h3>
+            <ol id="trace-releases" class="timeline"></ol>
+            <h3>任务状态记录</h3>
+            <ol id="trace-events" class="timeline"></ol>
+        </section>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,132 @@
+{
+  "AgentNode": {
+    "schemaVersion": "1",
+    "projectId": "demo-java",
+    "agentId": "manager-order",
+    "parentId": "root",
+    "roles": [
+      "MANAGER",
+      "WORKER"
+    ],
+    "capabilities": [
+      "java",
+      "maven"
+    ],
+    "endpoint": "https://worker.example.test",
+    "hostId": "host-1",
+    "topologyVersion": 2,
+    "rowVersion": 1,
+    "status": "ACTIVE"
+  },
+  "Approval": {
+    "schemaVersion": "1",
+    "projectId": "demo-java",
+    "approvalId": "approval-1",
+    "scope": {
+      "operation": "INTEGRATION_MERGE",
+      "objectId": "integration-1",
+      "objectVersion": 1,
+      "contentDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "candidateCommit": "cccccccccccccccccccccccccccccccccccccccc"
+    },
+    "rowVersion": 1,
+    "status": "PENDING",
+    "requestedBy": "manager-order",
+    "requestedAt": "2026-11-09T10:00:00Z",
+    "expiresAt": "2026-11-09T10:15:00Z",
+    "requestReason": "Review candidate CI evidence",
+    "decidedBy": null,
+    "decidedAt": null,
+    "decisionReason": null
+  },
+  "Incident": {
+    "schemaVersion": "1",
+    "projectId": "demo-java",
+    "taskId": "ORDER-017",
+    "revision": 1,
+    "attemptId": "attempt-1",
+    "leaseEpoch": 1,
+    "errorType": "IMPLEMENTATION",
+    "errorCode": "TEST_FAILED",
+    "fingerprint": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "firstSeenAt": "2026-11-09T10:00:00Z",
+    "lastSeenAt": "2026-11-09T10:00:00Z",
+    "baseCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "resultCommit": null,
+    "contractVersion": "contract-1.2",
+    "failedTests": [
+      "OrderTest.stock"
+    ],
+    "logRefs": [
+      {
+        "artifactId": "tests-1",
+        "uri": "https://artifacts.example.test/tests-1.json",
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ],
+    "triedActions": [
+      "Reran the failing test"
+    ],
+    "blockedDependencies": [],
+    "remainingBudget": {
+      "tokenBudget": 1000,
+      "costBudget": {
+        "currency": "CNY",
+        "limit": "1.00"
+      }
+    },
+    "suggestedActions": [
+      "Review stock contract"
+    ],
+    "requestedDecision": "Clarify the expected stock response",
+    "incidentId": "incident-1",
+    "reporterId": "worker-1",
+    "rowVersion": 1,
+    "topologyVersion": 2,
+    "escalationPath": [
+      "manager-order",
+      "root"
+    ],
+    "escalationIndex": 0,
+    "assignedTo": "manager-order",
+    "status": "OPEN",
+    "ackDeadline": "2026-11-09T10:05:00Z",
+    "decisionDeadline": "2026-11-09T10:15:00Z"
+  },
+  "IncidentDecision": {
+    "schemaVersion": "1",
+    "projectId": "demo-java",
+    "decisionId": "decision-1",
+    "incidentId": "incident-1",
+    "incidentVersion": 1,
+    "actorId": "manager-order",
+    "decidedAt": "2026-11-09T10:00:00Z",
+    "decision": "REQUEST_INFO",
+    "reason": "Confirm expected response",
+    "deadline": "2026-11-09T10:15:00Z",
+    "relatedTasks": []
+  },
+  "EventEnvelope": {
+    "schemaVersion": "1",
+    "projectId": "demo-java",
+    "eventId": "event-1",
+    "eventType": "TASK_STATE_CHANGED",
+    "aggregateId": "ORDER-017",
+    "aggregateVersion": 4,
+    "revision": 1,
+    "occurredAt": "2026-11-09T10:00:00Z",
+    "traceId": "trace-1",
+    "causationId": null,
+    "payload": {
+      "schemaVersion": "1",
+      "projectId": "demo-java",
+      "taskId": "ORDER-017",
+      "revision": 1,
+      "state": "RUNNING",
+      "rowVersion": 4,
+      "leaseEpoch": 1,
+      "currentAttemptId": "attempt-1",
+      "updatedAt": "2026-11-09T09:00:10Z"
+    }
+  }
+}

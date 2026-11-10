@@ -1,0 +1,69 @@
+package @package@.runtime;
+
+import com.alibaba.csp.sentinel.SphU;
+import com.alibaba.csp.sentinel.Tracer;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
+import com.alibaba.csp.sentinel.slots.block.RuleConstant;
+import com.alibaba.csp.sentinel.slots.block.degrade.DegradeRule;
+import com.alibaba.csp.sentinel.slots.block.degrade.DegradeRuleManager;
+import com.alibaba.csp.sentinel.slots.block.flow.FlowRule;
+import com.alibaba.csp.sentinel.slots.block.flow.FlowRuleManager;
+import java.util.List;
+import java.util.function.Supplier;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
+
+@Primary
+@Component
+class SentinelTraffic implements TrafficGuard {
+    private static final String API = "jdda.target.http";
+    private static final String DOWNSTREAM = "jdda.target.downstream";
+    private volatile RuntimePolicy.Settings current;
+
+    @Override
+    public void configure(RuntimePolicy.Settings next) {
+        if (current == null || current.apiQps() != next.apiQps()) {
+            var flow = new FlowRule(API);
+            flow.setGrade(RuleConstant.FLOW_GRADE_QPS);
+            flow.setCount(next.apiQps());
+            FlowRuleManager.loadRules(next.apiQps() == 0 ? List.of() : List.of(flow));
+        }
+        if (current == null || current.circuitMinRequests() != next.circuitMinRequests()
+                || current.circuitOpenSeconds() != next.circuitOpenSeconds()) {
+            var breaker = new DegradeRule(DOWNSTREAM);
+            breaker.setGrade(RuleConstant.DEGRADE_GRADE_EXCEPTION_RATIO);
+            breaker.setCount(0.5);
+            breaker.setMinRequestAmount(next.circuitMinRequests());
+            breaker.setStatIntervalMs(10000);
+            breaker.setTimeWindow(next.circuitOpenSeconds());
+            DegradeRuleManager.loadRules(next.circuitMinRequests() == 0 ? List.of() : List.of(breaker));
+        }
+        current = next;
+    }
+
+    @Override
+    public Permit enter() {
+        if (current.apiQps() == 0) return TrafficGuard.super.enter();
+        try {
+            var entry = SphU.entry(API);
+            return entry::exit;
+        } catch (BlockException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public <T> T downstream(Supplier<T> request) {
+        if (current.circuitMinRequests() == 0) return request.get();
+        try (var entry = SphU.entry(DOWNSTREAM)) {
+            try {
+                return request.get();
+            } catch (RuntimeException e) {
+                Tracer.traceEntry(e, entry);
+                throw e;
+            }
+        } catch (BlockException e) {
+            throw new CircuitOpen();
+        }
+    }
+}
