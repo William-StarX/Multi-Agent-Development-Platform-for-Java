@@ -2,6 +2,77 @@
 
 JDDA 面向熟悉 Java、Git 和 Docker 的开发者。你定义服务边界、技术栈、包级任务和验收标准。Agent 按范围生成代码，Library 整合候选，验收器在 Docker 中验证候选的完整 Git SHA。
 
+## 架构
+
+### JDDA 控制服务与 Agent 分工
+
+```mermaid
+flowchart TB
+    accTitle: JDDA 控制服务与 Agent 分工
+    developer["开发者 · 控制台 / CLI"] --> platform
+
+    subgraph platform["JDDA 平台"]
+        direction LR
+        quotas["Nacos 调度配额（可选）"] -.-> control["控制服务"]
+        control --> database[("PostgreSQL")]
+    end
+
+    platform <-->|"任务、租约与结果"| projectAgents
+
+    subgraph projectAgents["项目 Agent"]
+        direction TB
+        root["Root · 总控"] -->|"委派"| middle["中级 · 项目协调"]
+        middle --> scope["次中级 · 模块协调"]
+        scope --> worker["Worker · 包级开发"]
+        root --> specialists
+
+        subgraph specialists["Root 直属专职 Agent"]
+            direction LR
+            library["Library · 索引与整合"] <-->|"失败证据 / 修复提交"| bugfix["Bugfix · 专职修复"]
+        end
+    end
+```
+
+控制服务校验委派关系、任务范围与领取资格，保存租约、结果和操作事件。Root 可以从 Library 按需查询任务摘要及其证据。Root 授权专职修复时，Bugfix 从独立队列领取任务，依据 Library 中的失败证据工作。规划与执行角色可配置各自的模型接口，数据库、配置和部署任务可按资源边界划分。[Agent 架构](contracts/AGENT_ARCHITECTURE.md) · [模型与部署配置](docs/PLATFORM_SETUP.md)
+
+控制台可切换项目、暂停派发、查看阶段轨迹和工具结果，并在授权范围内追加指令。Worker 在检查点采用新指令，结果携带对应版本。各执行主机可用独立身份连接同一控制服务。[控制台与跨主机运行](docs/RELEASE_RUNBOOK.md)
+
+### 生成项目的服务拓扑
+
+```mermaid
+flowchart TB
+    accTitle: 生成项目的服务拓扑
+    caller["API 调用方"] --> entry["私网直连 / Nginx / Spring Cloud Gateway"]
+    entry --> replicas["Spring Boot 服务副本"]
+    operator["维护者"] -->|"发布模块配置"| nacos["项目 Nacos"]
+    replicas -.->|"每 5 秒读取策略"| nacos
+    replicas -->|"按模块启用"| dependencies["PostgreSQL / Redis / RabbitMQ"]
+```
+
+项目清单指定模块、入口和副本数。每个服务副本从项目 Nacos 读取所属模块的策略，在实例内应用业务参数和在途请求上限。模块可选 Sentinel 做限流熔断，或用 OpenFeign 调用其他服务。[生成项目维护手册](docs/PROJECT_GENERATION.md)
+
+## 从项目清单到交付
+
+```mermaid
+flowchart TB
+    accTitle: 从项目清单到交付
+    manifest["项目清单 · 模块、任务与授权路径"]
+    baseline["渲染骨架并提交 Git 基线"]
+    work["逐级委派 · Worker 在独立工作区提交"]
+    candidate["Library 整合任务提交 · 记录候选 SHA"]
+    verify["按候选 SHA 构建 Docker · 启动服务并运行负载"]
+    gate{"负载验收通过？"}
+    promote["基线匹配时快进本地 main"]
+    repair["维护者提交任务诊断"]
+
+    manifest --> baseline --> work --> candidate --> verify --> gate
+    gate -->|"通过且指定 --promote"| promote
+    gate -->|"需要修订任务输出"| repair
+    repair -->|"-Resume -Repair"| work
+```
+
+生成脚本把基线、Worker 提交和候选 SHA 写入 `generation.json`。验收器核对候选的提交图及文件范围，使用隔离的 Compose 环境运行负载并保存报告。需要发布远端候选时，再执行仓库 CI 和审批。[生成脚本](scripts/Invoke-ProjectGeneration.ps1) · [验收记录](docs/PROJECT_ACCEPTANCE.md) · [远端发布流程](docs/RELEASE_RUNBOOK.md#发布已审查候选)
+
 ## 运行平台
 
 准备 PowerShell 7、JDK 21、Maven、Git、Python 3.12 和 PostgreSQL。需要生成项目的容器验收时，启动支持 Linux 容器的 Docker Compose。控制服务用独立 PostgreSQL 库，首次部署前按下文创建应用角色。
@@ -39,13 +110,7 @@ python -B scripts/Verify-GeneratedProject.py --manifest $manifest --generation "
 | 构建与交付 | Worker 独立提交，Library 记录有序合并和完整候选 SHA。容器基础镜像固定摘要，同一服务各副本使用同一镜像。 |
 | 凭据与连接 | 从部署环境注入数据库、Nacos 和服务凭据。使用 `ProjectNacos.py` 初始化只读服务账号、读取和发布配置。 |
 
-服务之间没有业务 Java 模块依赖。生成骨架提供缓存、事件、限流和下游调用接口，可选适配器仅进入选择它的服务。平台控制服务单独使用 PostgreSQL 维护任务、租约和并发配额，可从 Nacos 调整各项目的 Worker 配额。[控制服务运行治理](docs/PLATFORM_GOVERNANCE.md)
-
-## Agent 协作
-
-Root 负责总控与调度。Library 管理任务索引、验收结果与 Git 整合。Bugfix 直属 Root 并通过 Library 获取交付证据。常规任务沿 Root → 项目中级 → 模块次中级 → 包或资源范围 Worker 派发，数据库、配置和部署任务可按资源边界划分。[组织拓扑和 API](contracts/README.md)
-
-控制台可切换项目、暂停派发、查看阶段轨迹、工具结果和决策摘要，并在任务授权范围内追加指令。Worker 在检查点采用新指令，结果携带对应版本。各执行主机可用独立身份连接同一控制服务。[控制台、跨主机和候选发布](docs/RELEASE_RUNBOOK.md)
+生成骨架提供缓存、事件、限流和下游调用接口，可选适配器随模块配置启用。控制服务可从 Nacos 读取各项目的 Worker 配额。[控制服务运行治理](docs/PLATFORM_GOVERNANCE.md)
 
 ## 测试与运行范围
 
