@@ -1,0 +1,4 @@
+interface:
+  display_name: "JDDA Root 总控"
+  short_description: "部署 JDDA 并以项目 Root 身份打开开发控制台"
+  default_prompt: "用 $jdda-root 部署 JDDA 并打开控制台。"

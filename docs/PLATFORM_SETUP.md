@@ -2,7 +2,9 @@
 
 ## Windows 本机
 
-环境需要 PowerShell 7、JDK 21、Maven、Git，以及已创建的 PostgreSQL 应用库和专用登录角色。数据库默认使用 `127.0.0.1:5432/jdda_local` 和角色 `jdda_local`。新环境由数据库管理员按项目 README 的「新环境数据库」初始化。
+自动部署可通过 `$jdda-root` 或 `./scripts/Start-JddaRoot.ps1` 启动。入口建立项目的 Root 身份并打开已配对的控制台。没有配置数据库凭据时，会用 Docker 初始化独立 PostgreSQL。[JDDA Root Skill](../skills/jdda-root/SKILL.md)
+
+手动部署需要 PowerShell 7、JDK 21、Maven、Git，以及已创建的 PostgreSQL 应用库和专用登录角色。数据库默认使用 `127.0.0.1:5432/jdda_local` 和角色 `jdda_local`。
 
 ```powershell
 .\scripts\Deploy-Platform.ps1 -OpenConsole
@@ -18,6 +20,19 @@
 ```
 
 API 基础路径可以包含 `/v1` 等前缀，客户端会添加 `/chat/completions`。Windows 加密存储绑定当前用户，保存的模型密钥绑定配置时的基础 URL。部署与保存配置在本机完成。可运行 `./scripts/Test-PlatformModel.ps1` 用固定提示验证模型连通性。
+
+### 新环境数据库
+
+手动部署时，用 PostgreSQL 管理账号在 psql 中创建控制库和独立测试库。Windows 部署脚本首次启动时会提示输入应用角色的密码。
+
+```sql
+CREATE ROLE jdda_local LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE;
+\password jdda_local
+CREATE DATABASE jdda_local OWNER jdda_local;
+REVOKE CONNECT ON DATABASE jdda_local FROM PUBLIC;
+CREATE DATABASE jdda_test OWNER jdda_local;
+REVOKE CONNECT ON DATABASE jdda_test FROM PUBLIC;
+```
 
 ## 服务部署环境
 
