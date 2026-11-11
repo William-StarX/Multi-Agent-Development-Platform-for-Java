@@ -4,25 +4,26 @@
 
 ## 中文
 
-JDDA 按模块和包分派 Java 开发任务。控制服务用 PostgreSQL 保存任务与租约，生成的服务用 Nacos 管理运行策略。
+JDDA 是 Java 多智能体协同开发平台，按模块和包分派开发任务。控制台通过控制服务查看任务状态，任务与租约保存在 PostgreSQL。生成的服务用 Nacos 管理运行策略。
 
 ### 架构
 
 ```mermaid
 flowchart TB
-    control["控制台 · 控制服务 · PostgreSQL"] <-->|"任务与租约"| agents
-    subgraph agents["项目 Agent"]
-        direction TB
-        root["Root 总控"] --> middle["项目中级"] --> scope["模块次中级"] --> worker["包级 Worker"]
-        root --> specialists
-        subgraph specialists["Root 直属"]
-            direction LR
-            library["Library · 任务索引与 Git 整合"] <-->|"证据与修复提交"| bugfix["Bugfix · 专职修复"]
-        end
-    end
+    accTitle: JDDA Agent 组织树
+    root["Root 总控"] --> library["Library<br/>任务索引与 Git 整合"]
+    root --> middle["中级 · 项目协调"]
+    root --> bugfix["Bugfix · 专职修复"]
+    middle --> order["次中级 · 订单模块"]
+    middle --> inventory["次中级 · 库存模块"]
+    order --> orderController["controller"]
+    order --> orderService["service"]
+    order --> orderMapper["mapper"]
+    inventory --> inventoryService["service"]
+    inventory --> inventoryMapper["mapper"]
 ```
 
-Worker 从同一 Git 基线独立提交。Library 整合候选，验收器按候选 SHA 构建 Docker 镜像并运行负载。[Agent 架构](contracts/AGENT_ARCHITECTURE.md)
+订单和库存是示例模块。模块下每个包由独立的 Worker 从同一 Git 基线开发并提交。Bugfix 从 Library 读取失败证据，修复后将提交交回 Library。Library 整合候选后，验收器按候选 SHA 构建 Docker 镜像并运行负载。[Agent 架构](contracts/AGENT_ARCHITECTURE.md)
 
 ### 启动
 
@@ -45,25 +46,26 @@ python -B scripts/Verify-GeneratedProject.py --manifest $manifest --generation "
 
 ## English
 
-JDDA delegates Java development by module and package. The control service stores tasks and leases in PostgreSQL. Generated services read their runtime policies from Nacos.
+JDDA is a multi-agent development platform for Java. It delegates work by module and package. The console reads task status from the control service, which stores tasks and leases in PostgreSQL. Generated services read their runtime policies from Nacos.
 
 ### Architecture
 
 ```mermaid
 flowchart TB
-    control["Console · Control service · PostgreSQL"] <-->|"Tasks and leases"| agents
-    subgraph agents["Project agents"]
-        direction TB
-        root["Root coordinator"] --> middle["Project manager"] --> scope["Module manager"] --> worker["Package worker"]
-        root --> specialists
-        subgraph specialists["Report to Root"]
-            direction LR
-            library["Library · Task index and Git integration"] <-->|"Evidence and fix commits"| bugfix["Bugfix agent"]
-        end
-    end
+    accTitle: JDDA agent tree
+    root["Root coordinator"] --> library["Library<br/>Task index and Git merges"]
+    root --> middle["Project manager"]
+    root --> bugfix["Bugfix agent"]
+    middle --> order["Order module manager"]
+    middle --> inventory["Inventory module manager"]
+    order --> orderController["controller"]
+    order --> orderService["service"]
+    order --> orderMapper["mapper"]
+    inventory --> inventoryService["service"]
+    inventory --> inventoryMapper["mapper"]
 ```
 
-Workers commit independently from a common Git baseline. Library integrates the candidate, and the verifier builds its exact SHA in Docker and runs the workload. [Agent architecture](contracts/AGENT_ARCHITECTURE.md)
+Orders and inventory are example modules. Each package has its own worker, which commits independently from a common Git baseline. Bugfix gets failure evidence from Library and returns the fix commit to it. Library integrates the candidate, and the verifier builds its exact SHA in Docker and runs the workload. [Agent architecture](contracts/AGENT_ARCHITECTURE.md)
 
 ### Start JDDA
 
