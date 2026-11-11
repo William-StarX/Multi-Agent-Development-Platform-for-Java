@@ -10,7 +10,7 @@ if ([string]::IsNullOrWhiteSpace($model) -or $model.Trim() -cne $model -or $mode
     throw '请输入有效的模型 ID。'
 }
 if (-not $ApiKey) {
-    Write-Host "JDDA 模型连接 $model（$baseUrl）"
+    Write-Host "MADPJ 模型连接 $model（$baseUrl）"
     $ApiKey = Read-Host '模型 API Key' -AsSecureString
 }
 if (-not $ApiKey.Length) { throw '请输入模型 API Key。' }
@@ -36,4 +36,4 @@ try {
 }
 
 & (Join-Path $PSScriptRoot 'Set-PlatformModel.ps1') -BaseUrl $baseUrl -Model $model -ApiKey $ApiKey
-Write-Host 'Root 模型连通性验证通过，可以开始使用 JDDA。'
+Write-Host 'Root 模型连通性验证通过，可以开始使用 MADPJ。'

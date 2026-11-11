@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "JDDA governance contracts v1 draft",
+  "title": "MADPJ governance contracts v1 draft",
   "oneOf": [
     {
       "$ref": "#/$defs/AgentNode"

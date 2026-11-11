@@ -1,8 +1,8 @@
-# 部署与连接 JDDA
+# 部署与连接 MADPJ
 
 ## Windows 本机
 
-自动部署可通过 `$jdda-root` 或 `./scripts/Start-JddaRoot.ps1` 启动。入口建立项目的 Root 身份并打开已配对的控制台。没有配置数据库凭据时，会用 Docker 初始化独立 PostgreSQL。[JDDA Root Skill](../skills/jdda-root/SKILL.md)
+自动部署可通过 `$jdda-root` 或 `./scripts/Start-JddaRoot.ps1` 启动。入口建立项目的 Root 身份并打开已配对的控制台。没有配置数据库凭据时，会用 Docker 初始化独立 PostgreSQL。[MADPJ Root Skill](../skills/jdda-root/SKILL.md)
 
 手动部署需要 PowerShell 7、JDK 21、Maven、Git，以及已创建的 PostgreSQL 应用库和专用登录角色。数据库默认使用 `127.0.0.1:5432/jdda_local` 和角色 `jdda_local`。
 

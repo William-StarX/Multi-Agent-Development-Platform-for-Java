@@ -7,7 +7,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-if (-not $IsWindows) { throw 'JDDA Root 的自动部署入口需要 Windows 和 PowerShell 7。' }
+if (-not $IsWindows) { throw 'MADPJ Root 的自动部署入口需要 Windows 和 PowerShell 7。' }
 . (Join-Path $PSScriptRoot 'PlatformSettings.ps1')
 $root = Split-Path -Parent $PSScriptRoot
 $controlUrl = Resolve-JddaControlUrl (Get-JddaLocalControlUrl)
@@ -25,7 +25,7 @@ $held = $false
 try {
     try { $held = $mutex.WaitOne([TimeSpan]::FromSeconds(30)) }
     catch [Threading.AbandonedMutexException] { $held = $true }
-    if (-not $held) { throw '另一项 JDDA 本机启动仍在进行，请稍后再次调用。' }
+    if (-not $held) { throw '另一项 MADPJ 本机启动仍在进行，请稍后再次调用。' }
 
     if (-not $env:JAVA_HOME -or -not (Test-Path -LiteralPath (Join-Path $env:JAVA_HOME 'bin/javac.exe'))) {
         $javac = Get-Command javac.exe -ErrorAction SilentlyContinue
@@ -68,7 +68,7 @@ try {
     } elseif (-not $workerReady) {
         Invoke-JddaWithoutModelSecrets {
             & mvn -B -ntp -f (Join-Path $agentModule 'pom.xml') package | Out-Host
-            if ($LASTEXITCODE -ne 0) { throw 'JDDA Agent 构建失败。' }
+            if ($LASTEXITCODE -ne 0) { throw 'MADPJ Agent 构建失败。' }
         }
     }
 
@@ -81,14 +81,14 @@ try {
         $headers['Idempotency-Key'] = 'jdda-root-skill-' + [Guid]::NewGuid().ToString('N')
         $null = Invoke-RestMethod -Method Post -Uri "$controlUrl/api/v1/projects" @options -ContentType 'application/json' `
             -Body (@{ projectId = $ProjectId } | ConvertTo-Json -Compress) -SkipHttpErrorCheck -StatusCodeVariable created
-        if ($created -notin @(201, 409)) { throw "创建 JDDA 项目失败（HTTP $created）。" }
+        if ($created -notin @(201, 409)) { throw "创建 MADPJ 项目失败（HTTP $created）。" }
         $project = Invoke-RestMethod -Uri $projectUrl @options
     } elseif ($status -ne 200) {
-        throw "无法通过本机 JDDA 管理凭据读取项目（HTTP $status）。"
+        throw "无法通过本机 MADPJ 管理凭据读取项目（HTTP $status）。"
     }
     $agent = @($project.agents | Where-Object { $_.roles -ccontains 'ROOT' })
     if ($project.projectId -cne $ProjectId -or $agent.Count -ne 1 -or $agent[0].parentId -or $agent[0].status -cne 'ACTIVE') {
-        throw 'JDDA 项目缺少唯一的有效 Root 身份。'
+        throw 'MADPJ 项目缺少唯一的有效 Root 身份。'
     }
 
     $needsKey = $ConfigureModel -or $BaseUrl -or $Model -or -not $selectedModel -or

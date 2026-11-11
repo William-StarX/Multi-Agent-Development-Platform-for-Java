@@ -1,4 +1,4 @@
-# JDDA 运行治理
+# MADPJ 运行治理
 
 控制服务可订阅 Nacos 中的一份 JSON 配置。项目并发配额由 PostgreSQL 中的领取事务执行。操作者在 Nacos 发布或回滚规则，通过管理 API 核对结果。生成项目有各自独立的 Nacos 策略，选用 Sentinel 的模块可以配置业务限流和熔断。[生成项目配置](PROJECT_GENERATION.md) · [Nacos Java SDK](https://nacos.io/en/docs/latest/manual/user/java-sdk/usage/)
 
@@ -13,7 +13,7 @@
 }
 ```
 
-给控制服务进程设置以下环境变量，然后启动或重启 JDDA。部署环境负责注入 Nacos 只读账号凭据。发布权限可分配给独立的 Nacos 运维账号。
+给控制服务进程设置以下环境变量，然后启动或重启 MADPJ。部署环境负责注入 Nacos 只读账号凭据。发布权限可分配给独立的 Nacos 运维账号。
 
 | 环境变量 | 用途 |
 | --- | --- |

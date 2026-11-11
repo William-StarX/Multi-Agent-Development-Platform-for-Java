@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "JDDA control plane contract draft",
+    "title": "MADPJ control plane contract draft",
     "version": "0.1.0",
     "description": "控制面契约。x-implemented=true 标识已实现接口。本机服务支持管理员及项目绑定的 Worker、Bugfix Bearer 凭据。"
   },

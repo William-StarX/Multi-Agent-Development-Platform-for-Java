@@ -1,16 +1,16 @@
-# JDDA
+# MADPJ
 
 [中文](#中文) · [English](#english)
 
 ## 中文
 
-JDDA 是 Java 多智能体协同开发平台，按模块和包分派开发任务。控制台通过控制服务查看任务状态，任务与租约保存在 PostgreSQL。生成的服务用 Nacos 管理运行策略。
+MADPJ 是 Java 多智能体协同开发平台，按模块和包分派开发任务。控制台通过控制服务查看任务状态，任务与租约保存在 PostgreSQL。生成的服务用 Nacos 管理运行策略。
 
 ### 架构
 
 ```mermaid
 flowchart TB
-    accTitle: JDDA Agent 组织树
+    accTitle: MADPJ Agent 组织树
     root["Root 总控"] --> library["Library<br/>任务索引与 Git 整合"]
     root --> middle["中级 · 项目协调"]
     root --> bugfix["Bugfix · 专职修复"]
@@ -46,13 +46,13 @@ python -B scripts/Verify-GeneratedProject.py --manifest $manifest --generation "
 
 ## English
 
-JDDA is a multi-agent development platform for Java. It delegates work by module and package. The console reads task status from the control service, which stores tasks and leases in PostgreSQL. Generated services read their runtime policies from Nacos.
+MADPJ stands for Multi-Agent Development Platform for Java. It delegates work by module and package. The console reads task status from the control service, which stores tasks and leases in PostgreSQL. Generated services read their runtime policies from Nacos.
 
 ### Architecture
 
 ```mermaid
 flowchart TB
-    accTitle: JDDA agent tree
+    accTitle: MADPJ agent tree
     root["Root coordinator"] --> library["Library<br/>Task index and Git merges"]
     root --> middle["Project manager"]
     root --> bugfix["Bugfix agent"]
@@ -67,11 +67,11 @@ flowchart TB
 
 Orders and inventory are example modules. Each package has its own worker, which commits independently from a common Git baseline. Bugfix gets failure evidence from Library and returns the fix commit to it. Library integrates the candidate, and the verifier builds its exact SHA in Docker and runs the workload. [Agent architecture](contracts/AGENT_ARCHITECTURE.md)
 
-### Start JDDA
+### Start MADPJ
 
 Use PowerShell 7 and JDK 21 on Windows. A source build uses Maven. Copy `skills/jdda-root` into Codex's `~/.codex/skills/` directory and invoke `$jdda-root` from the checkout, or run `./scripts/Start-JddaRoot.ps1` directly.
 
-The launcher starts or reuses the control service, establishes the project Root role, and opens the paired console. Enter your API key in the local terminal on first setup. JDDA verifies and encrypts it. Automatic database setup uses Docker's Linux container engine. [Skill](skills/jdda-root/SKILL.md) · [Deployment guide](docs/PLATFORM_SETUP.md)
+The launcher starts or reuses the control service, establishes the project Root role, and opens the paired console. Enter your API key in the local terminal on first setup. MADPJ verifies and encrypts it. Automatic database setup uses Docker's Linux container engine. [Skill](skills/jdda-root/SKILL.md) · [Deployment guide](docs/PLATFORM_SETUP.md)
 
 ### Generate and verify
 

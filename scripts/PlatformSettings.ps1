@@ -40,7 +40,7 @@ function Get-JddaControlPort {
     $value = if ($env:SERVER_PORT) { $env:SERVER_PORT } elseif ($env:JDDA_PORT) { $env:JDDA_PORT } else { '18080' }
     $port = 0
     if (-not [int]::TryParse($value, [ref]$port) -or $port -lt 1 -or $port -gt 65535) {
-        throw 'JDDA 端口必须是 1 到 65535 之间的整数。'
+        throw 'MADPJ 端口必须是 1 到 65535 之间的整数。'
     }
     $port
 }
@@ -54,7 +54,7 @@ function Resolve-JddaControlUrl([string]$Override) {
 function Get-JddaLocalControlUrl {
     $address = if ($env:SERVER_ADDRESS) { $env:SERVER_ADDRESS } elseif ($env:JDDA_BIND_ADDRESS) { $env:JDDA_BIND_ADDRESS } else { '127.0.0.1' }
     $ip = $null
-    if (-not [Net.IPAddress]::TryParse($address, [ref]$ip)) { throw 'JDDA 绑定地址必须是本机 IP 地址。' }
+    if (-not [Net.IPAddress]::TryParse($address, [ref]$ip)) { throw 'MADPJ 绑定地址必须是本机 IP 地址。' }
     if ($ip.Equals([Net.IPAddress]::Any)) { $ip = [Net.IPAddress]::Loopback }
     if ($ip.Equals([Net.IPAddress]::IPv6Any)) { $ip = [Net.IPAddress]::IPv6Loopback }
     ([UriBuilder]::new('http', $ip.ToString(), (Get-JddaControlPort))).Uri.AbsoluteUri.TrimEnd('/')
@@ -93,7 +93,7 @@ function Get-JddaDatabasePassword([switch]$Optional) {
         $credential = Read-JddaSettings 'jdda-local.credential.xml'
         if ($credential) { return $credential.GetNetworkCredential().Password }
     }
-    if (-not $Optional) { throw '请先配置 PostgreSQL 应用账号的 JDDA_DB_PASSWORD，再部署 JDDA。' }
+    if (-not $Optional) { throw '请先配置 PostgreSQL 应用账号的 JDDA_DB_PASSWORD，再部署 MADPJ。' }
 }
 
 function Resolve-JddaModelBaseUrl([string]$Override) {
@@ -154,7 +154,7 @@ function Get-JddaServiceProcess([string]$JarPath) {
         $process = Get-CimInstance Win32_Process -Filter "ProcessId=$owner"
         if ($process.Name -ne 'java.exe' -or -not $process.CommandLine -or
             $process.CommandLine.Replace('/', '\').IndexOf($JarPath.Replace('/', '\'), [StringComparison]::OrdinalIgnoreCase) -lt 0) {
-            throw "JDDA 端口 $(Get-JddaControlPort) 已由其他进程使用。"
+            throw "MADPJ 端口 $(Get-JddaControlPort) 已由其他进程使用。"
         }
         $process
     }

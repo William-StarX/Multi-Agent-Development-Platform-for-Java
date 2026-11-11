@@ -1,4 +1,4 @@
-name: Verify JDDA
+name: Verify MADPJ
 on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read

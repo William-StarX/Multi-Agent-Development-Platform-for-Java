@@ -1,6 +1,6 @@
 # 生成项目验收记录
 
-2026-11-11 在 Windows Docker Desktop 的 Linux amd64 容器中执行。JDDA 的 Root、中级、模块次中级和包级 Worker 使用已配置的 DeepSeek 生成 Java 源码。每个 Worker 从同一份基线提交授权文件，Library 按任务顺序合并。验收器检查 Git 提交图、源文件范围、基线内容和每个副本的镜像标识，再运行负载。通过后将各自的本地验收分支快进到候选 SHA。
+2026-11-11 在 Windows Docker Desktop 的 Linux amd64 容器中执行。MADPJ 的 Root、中级、模块次中级和包级 Worker 使用已配置的 DeepSeek 生成 Java 源码。每个 Worker 从同一份基线提交授权文件，Library 按任务顺序合并。验收器检查 Git 提交图、源文件范围、基线内容和每个副本的镜像标识，再运行负载。通过后将各自的本地验收分支快进到候选 SHA。
 
 ## 双副本并发
 

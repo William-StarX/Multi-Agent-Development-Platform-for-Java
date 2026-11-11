@@ -17,7 +17,7 @@ if ($LASTEXITCODE -ne 0) {
         if ($LASTEXITCODE -eq 0) { break }
     } while ([DateTime]::UtcNow -lt $deadline)
 }
-if ($engine -cne 'linux') { throw 'JDDA 自动配置数据库需要 Docker 的 Linux 容器引擎。' }
+if ($engine -cne 'linux') { throw 'MADPJ 自动配置数据库需要 Docker 的 Linux 容器引擎。' }
 
 $profileName = 'jdda-root-db.credential.xml'
 $databaseSettings = Read-JddaSettings $profileName
@@ -33,7 +33,7 @@ if (-not $databaseSettings) {
 }
 if ($databaseSettings.Id -cnotmatch '^[0-9a-f]{12}$' -or
         $databaseSettings.App.UserName -cne 'app' -or $databaseSettings.Owner.UserName -cne 'postgres') {
-    throw 'JDDA 本机数据库配置无法识别。'
+    throw 'MADPJ 本机数据库配置无法识别。'
 }
 $container = 'jdda-root-db-' + $databaseSettings.Id
 $label = & docker inspect --type container --format '{{index .Config.Labels "io.jdda.root-database"}}' $container 2>$null
@@ -49,23 +49,23 @@ if ($LASTEXITCODE -ne 0) {
             '--publish', '127.0.0.1::5432', '--volume', "$($container):/var/lib/postgresql",
             '--env', 'POSTGRES_USER=postgres', '--env', 'POSTGRES_DB=app', '--env', 'POSTGRES_PASSWORD', '--env', 'APP_DB_PASSWORD', $image)
         & docker @create | Out-Null
-        if ($LASTEXITCODE -ne 0) { throw '无法创建 JDDA 的 PostgreSQL 容器。' }
+        if ($LASTEXITCODE -ne 0) { throw '无法创建 MADPJ 的 PostgreSQL 容器。' }
     } finally {
         $env:POSTGRES_PASSWORD = $priorOwner
         $env:APP_DB_PASSWORD = $priorApp
     }
 } elseif ($label -cne $databaseSettings.Id) {
-    throw '同名数据库容器不属于当前 JDDA 安装。'
+    throw '同名数据库容器不属于当前 MADPJ 安装。'
 }
 
 $running = & docker inspect --format '{{.State.Running}}' $container
-if ($LASTEXITCODE -ne 0) { throw '无法读取 JDDA 数据库容器状态。' }
+if ($LASTEXITCODE -ne 0) { throw '无法读取 MADPJ 数据库容器状态。' }
 if ($running -cne 'true') {
     $template = Join-Path (Split-Path -Parent $PSScriptRoot) 'templates/java21/postgres-init.sh.in'
     & docker cp $template "$($container):/docker-entrypoint-initdb.d/10-app.sh" | Out-Null
     if ($LASTEXITCODE -ne 0) { throw '无法复制 PostgreSQL 初始化脚本。' }
     & docker start $container | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw '无法启动 JDDA 的 PostgreSQL 容器。' }
+    if ($LASTEXITCODE -ne 0) { throw '无法启动 MADPJ 的 PostgreSQL 容器。' }
 }
 $priorPgPassword = $env:PGPASSWORD
 try {
@@ -76,10 +76,10 @@ try {
         if ($LASTEXITCODE -eq 0 -and $probe -ceq '1') { break }
         Start-Sleep -Seconds 2
     } while ([DateTime]::UtcNow -lt $deadline)
-    if ($probe -cne '1') { throw "JDDA 数据库未就绪。检查容器 $container 的启动日志。" }
+    if ($probe -cne '1') { throw "MADPJ 数据库未就绪。检查容器 $container 的启动日志。" }
 } finally {
     $env:PGPASSWORD = $priorPgPassword
 }
 $port = & docker port $container '5432/tcp'
-if ($LASTEXITCODE -ne 0 -or $port -cnotmatch '^127\.0\.0\.1:[0-9]+$') { throw 'JDDA 数据库应使用本机回环端口。' }
+if ($LASTEXITCODE -ne 0 -or $port -cnotmatch '^127\.0\.0\.1:[0-9]+$') { throw 'MADPJ 数据库应使用本机回环端口。' }
 [pscustomobject]@{ Url = "jdbc:postgresql://$port/app"; Credential = $databaseSettings.App }
